@@ -30,29 +30,31 @@ function drawStrikeZone() {
     // 清空画布
     ctx.fillStyle = '#1a1a2e';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    
+
     // 计算尺寸
     // 大九宫格占画布的 90%
     largeZoneSize = Math.min(canvas.width, canvas.height) * 0.9;
     largeZoneX = (canvas.width - largeZoneSize) / 2;
     largeZoneY = (canvas.height - largeZoneSize) / 2;
     
-    // 小九宫格是大九宫格的 2/3
+    // 小九宫格是大九宫格的 2/3（好球区）
     strikeZoneWidth = largeZoneSize * (2 / 3);
     strikeZoneHeight = largeZoneSize * (2 / 3);
     strikeZoneX = (canvas.width - strikeZoneWidth) / 2;
     strikeZoneY = (canvas.height - strikeZoneHeight) / 2;
     
-    // 保持向后兼容
     const smallZoneX = strikeZoneX;
     const smallZoneY = strikeZoneY;
     const smallZoneSize = strikeZoneWidth;
-    
     const smallCellW = smallZoneSize / 3;
     const smallCellH = smallZoneSize / 3;
-    
-    // 绘制大九宫格的网格线（半透明蓝色）
-    ctx.strokeStyle = 'rgba(52, 152, 219, 0.25)';
+
+    // 绘制坏球外围区域（半透明灰色 - 填充整个大九宫格）
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.fillRect(largeZoneX, largeZoneY, largeZoneSize, largeZoneSize);
+
+    // 大九宫格的网格线（半透明）
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
     ctx.lineWidth = 1;
     
     // 大九宫格的横线
@@ -70,12 +72,12 @@ function drawStrikeZone() {
         ctx.lineTo(largeZoneX + i * (largeZoneSize / 3), largeZoneY + largeZoneSize);
         ctx.stroke();
     }
-    
-    // 绘制小九宫格区域（好球区背景）
+
+    // 好球区背景（绿色半透明）
     ctx.fillStyle = 'rgba(46, 204, 113, 0.15)';
     ctx.fillRect(smallZoneX, smallZoneY, smallZoneSize, smallZoneSize);
-    
-    // 绘制小九宫格的网格线（实线）
+
+    // 小九宫格的网格线（实线白色）
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
     ctx.lineWidth = 1;
     
@@ -94,30 +96,30 @@ function drawStrikeZone() {
         ctx.lineTo(smallZoneX + i * smallCellW, smallZoneY + smallZoneSize);
         ctx.stroke();
     }
-    
+
     // 小九宫格边框（红色粗线 - 好球区）
     ctx.strokeStyle = '#e74c3c';
     ctx.lineWidth = 3;
     ctx.strokeRect(smallZoneX, smallZoneY, smallZoneSize, smallZoneSize);
-    
-    // 大九宫格边框（蓝色虚线 - 仅供参考）
+
+    // 大九宫格边框（蓝色虚线 - 坏球参考区）
     ctx.setLineDash([8, 5]);
-    ctx.strokeStyle = 'rgba(52, 152, 219, 0.6)';
+    ctx.strokeStyle = 'rgba(52, 152, 219, 0.8)';
     ctx.lineWidth = 3;
     ctx.strokeRect(largeZoneX, largeZoneY, largeZoneSize, largeZoneSize);
     ctx.setLineDash([]);
-    
-    // 小九宫格标签
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-    ctx.font = 'bold 12px Arial';
+
+    // 好球区标签
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.font = '11px Arial';
     ctx.textAlign = 'center';
-    
+
     const labels = [
         ['高内', '高中', '高外'],
         ['中内', '好球区', '中外'],
         ['低内', '低中', '低外']
     ];
-    
+
     for (let row = 0; row < 3; row++) {
         for (let col = 0; col < 3; col++) {
             const x = smallZoneX + col * smallCellW + smallCellW / 2;
@@ -125,14 +127,18 @@ function drawStrikeZone() {
             ctx.fillText(labels[row][col], x, y + 4);
         }
     }
-    
-    // 图例说明
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.font = '11px Arial';
-    ctx.textAlign = 'left';
-    ctx.fillText('红框内 = 好球区（2/3尺寸）', 10, canvas.height - 15);
-    ctx.textAlign = 'right';
-    ctx.fillText('虚线内 = 大参考区', canvas.width - 10, canvas.height - 15);
+
+    // 坏球区标签（大九宫格四个角落）
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
+    ctx.font = '10px Arial';
+    // 顶部
+    ctx.fillText('坏球区（高）', canvas.width / 2, largeZoneY - 8);
+    // 底部
+    ctx.fillText('坏球区（低）', canvas.width / 2, largeZoneY + largeZoneSize + 15);
+    // 左侧
+    ctx.fillText('外', largeZoneX - 12, canvas.height / 2);
+    // 右侧
+    ctx.fillText('外', largeZoneX + largeZoneSize + 12, canvas.height / 2);
     
     // 重新绘制已保存的点
     // 好球（绿色）

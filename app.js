@@ -51,8 +51,8 @@ function drawStrikeZone() {
     const smallCellW = smallZoneSize / 3;
     const smallCellH = smallZoneSize / 3;
     
-    // 绘制大九宫格的网格线（半透明，不显示边框）
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
+    // 绘制大九宫格的网格线（半透明蓝色）
+    ctx.strokeStyle = 'rgba(52, 152, 219, 0.25)';
     ctx.lineWidth = 1;
     
     // 大九宫格的横线
@@ -100,10 +100,10 @@ function drawStrikeZone() {
     ctx.lineWidth = 3;
     ctx.strokeRect(smallZoneX, smallZoneY, smallZoneSize, smallZoneSize);
     
-    // 大九宫格边框（白色虚线 - 仅供参考，不计入）
-    ctx.setLineDash([5, 5]);
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
-    ctx.lineWidth = 2;
+    // 大九宫格边框（蓝色虚线 - 仅供参考）
+    ctx.setLineDash([8, 5]);
+    ctx.strokeStyle = 'rgba(52, 152, 219, 0.6)';
+    ctx.lineWidth = 3;
     ctx.strokeRect(largeZoneX, largeZoneY, largeZoneSize, largeZoneSize);
     ctx.setLineDash([]);
     

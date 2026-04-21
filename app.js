@@ -23,93 +23,118 @@ document.addEventListener('DOMContentLoaded', () => {
     updateStats();
 });
 
-// ===== 绘制九宫格进垒区（缩小版 + 坏球外围区）=====
+// ===== 绘制九宫格进垒区（双层结构：大九宫格 + 小九宫格）=====
 function drawStrikeZone() {
     // 清空画布
     ctx.fillStyle = '#1a1a2e';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // 好球区在中心位置
-    const zoneSize = Math.min(canvas.width, canvas.height) * 0.55; // 好球区占55%
-    const zoneX = (canvas.width - zoneSize) / 2;
-    const zoneY = (canvas.height - zoneSize) / 2;
-    const cellW = zoneSize / 3;
-    const cellH = zoneSize / 3;
+    // 计算尺寸
+    // 大九宫格占画布的 90%
+    const largeZoneSize = Math.min(canvas.width, canvas.height) * 0.9;
+    const largeZoneX = (canvas.width - largeZoneSize) / 2;
+    const largeZoneY = (canvas.height - largeZoneSize) / 2;
     
-    // 绘制坏球外围区域（半透明灰色）
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    // 小九宫格是大九宫格的 2/3
+    const smallZoneSize = largeZoneSize * (2 / 3);
+    const smallZoneX = (canvas.width - smallZoneSize) / 2;
+    const smallZoneY = (canvas.height - smallZoneSize) / 2;
     
-    // 好球区背景
-    ctx.fillStyle = 'rgba(46, 204, 113, 0.1)';
-    ctx.fillRect(zoneX, zoneY, zoneSize, zoneSize);
+    const smallCellW = smallZoneSize / 3;
+    const smallCellH = smallZoneSize / 3;
     
-    // 绘制网格线（好球区）
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    // 绘制大九宫格的网格线（半透明，不显示边框）
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)';
     ctx.lineWidth = 1;
     
-    // 横线
+    // 大九宫格的横线
     for (let i = 1; i < 3; i++) {
         ctx.beginPath();
-        ctx.moveTo(zoneX, zoneY + i * cellH);
-        ctx.lineTo(zoneX + zoneSize, zoneY + i * cellH);
+        ctx.moveTo(largeZoneX, largeZoneY + i * (largeZoneSize / 3));
+        ctx.lineTo(largeZoneX + largeZoneSize, largeZoneY + i * (largeZoneSize / 3));
         ctx.stroke();
     }
     
-    // 竖线
+    // 大九宫格的竖线
     for (let i = 1; i < 3; i++) {
         ctx.beginPath();
-        ctx.moveTo(zoneX + i * cellW, zoneY);
-        ctx.lineTo(zoneX + i * cellW, zoneY + zoneSize);
+        ctx.moveTo(largeZoneX + i * (largeZoneSize / 3), largeZoneY);
+        ctx.lineTo(largeZoneX + i * (largeZoneSize / 3), largeZoneY + largeZoneSize);
         ctx.stroke();
     }
     
-    // 好球区边框（红色粗线）
+    // 绘制小九宫格区域（好球区背景）
+    ctx.fillStyle = 'rgba(46, 204, 113, 0.15)';
+    ctx.fillRect(smallZoneX, smallZoneY, smallZoneSize, smallZoneSize);
+    
+    // 绘制小九宫格的网格线（实线）
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
+    ctx.lineWidth = 1;
+    
+    // 小九宫格的横线
+    for (let i = 1; i < 3; i++) {
+        ctx.beginPath();
+        ctx.moveTo(smallZoneX, smallZoneY + i * smallCellH);
+        ctx.lineTo(smallZoneX + smallZoneSize, smallZoneY + i * smallCellH);
+        ctx.stroke();
+    }
+    
+    // 小九宫格的竖线
+    for (let i = 1; i < 3; i++) {
+        ctx.beginPath();
+        ctx.moveTo(smallZoneX + i * smallCellW, smallZoneY);
+        ctx.lineTo(smallZoneX + i * smallCellW, smallZoneY + smallZoneSize);
+        ctx.stroke();
+    }
+    
+    // 小九宫格边框（红色粗线 - 好球区）
     ctx.strokeStyle = '#e74c3c';
     ctx.lineWidth = 3;
-    ctx.strokeRect(zoneX, zoneY, zoneSize, zoneSize);
+    ctx.strokeRect(smallZoneX, smallZoneY, smallZoneSize, smallZoneSize);
     
-    // 好球区标签（小字）
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-    ctx.font = '11px Arial';
+    // 大九宫格边框（白色虚线 - 仅供参考，不计入）
+    ctx.setLineDash([5, 5]);
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(largeZoneX, largeZoneY, largeZoneSize, largeZoneSize);
+    ctx.setLineDash([]);
+    
+    // 小九宫格标签
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
+    ctx.font = 'bold 12px Arial';
     ctx.textAlign = 'center';
     
     const labels = [
-        ['高内', '高正', '高外'],
+        ['高内', '高中', '高外'],
         ['中内', '好球区', '中外'],
-        ['低内', '低正', '低外']
+        ['低内', '低中', '低外']
     ];
     
     for (let row = 0; row < 3; row++) {
         for (let col = 0; col < 3; col++) {
-            const x = zoneX + col * cellW + cellW / 2;
-            const y = zoneY + row * cellH + cellH / 2;
+            const x = smallZoneX + col * smallCellW + smallCellW / 2;
+            const y = smallZoneY + row * smallCellH + smallCellH / 2;
             ctx.fillText(labels[row][col], x, y + 4);
         }
     }
     
-    // 坏球区外围标签
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
-    ctx.font = '10px Arial';
-    
-    // 顶部标签
-    ctx.fillText('坏球区（高）', canvas.width / 2, zoneY - 15);
-    // 底部标签
-    ctx.fillText('坏球区（低）', canvas.width / 2, zoneY + zoneSize + 20);
-    // 左侧标签
-    ctx.fillText('外', zoneX - 20, canvas.height / 2);
-    // 右侧标签
-    ctx.fillText('内', zoneX + zoneSize + 20, canvas.height / 2);
+    // 图例说明
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.font = '11px Arial';
+    ctx.textAlign = 'left';
+    ctx.fillText('红框内 = 好球区（2/3尺寸）', 10, canvas.height - 15);
+    ctx.textAlign = 'right';
+    ctx.fillText('虚线内 = 大参考区', canvas.width - 10, canvas.height - 15);
     
     // 重新绘制已保存的点
     // 好球（绿色）
     spots.forEach((spot, index) => {
-        drawSpot(spot.x, spot.y, '#2ecc71', index + 1); // 绿色
+        drawSpot(spot.x, spot.y, '#2ecc71', index + 1);
     });
     
     // 坏球（橙色）
     badSpots.forEach((spot, index) => {
-        drawSpot(spot.x, spot.y, '#e67e22', spots.length + index + 1); // 橙色
+        drawSpot(spot.x, spot.y, '#e67e22', spots.length + index + 1);
     });
 }
 
@@ -278,57 +303,76 @@ function showPreview() {
     const badBalls = parseInt(document.getElementById('badBalls').value) || 0;
     const strikeouts = parseInt(document.getElementById('strikeouts').value) || 0;
     const hits = parseInt(document.getElementById('hits').value) || 0;
+    const runs = parseInt(document.getElementById('runs').value) || 0;
     const totalPitches = goodBalls + badBalls;
     const goodBallRate = totalPitches > 0 ? ((goodBalls / totalPitches) * 100).toFixed(1) : 0;
     
-    // 生成预览 HTML
+    // 将 Canvas 转换为图片
+    const canvasData = canvas.toDataURL('image/png');
+    
+    // 生成预览 HTML（包含九宫格图）
     preview.innerHTML = `
         <div style="font-family: Arial, sans-serif; color: #333;">
             <h1 style="text-align: center; color: #e74c3c; margin-bottom: 10px;">⚾ 投手训练报告</h1>
-            <h2 style="text-align: center; margin-bottom: 20px;">${trainingName}</h2>
+            <h2 style="text-align: center; margin-bottom: 15px;">${trainingName}</h2>
             
-            <div style="display: flex; justify-content: space-between; margin-bottom: 20px; font-size: 14px;">
+            <div style="display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 12px; color: #666;">
                 <span>投手：${pitcherName}</span>
                 <span>日期：${trainingDate}</span>
                 <span>类型：${pitchType}</span>
             </div>
             
-            <div style="border: 2px solid #333; padding: 15px; margin-bottom: 20px;">
-                <h3 style="margin-bottom: 10px;">📊 投球统计</h3>
-                <table style="width: 100%; border-collapse: collapse;">
-                    <tr style="border-bottom: 1px solid #ddd;">
-                        <td style="padding: 8px;">好球数</td>
-                        <td style="padding: 8px; font-weight: bold; text-align: right;">${goodBalls}</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #ddd;">
-                        <td style="padding: 8px;">坏球数</td>
-                        <td style="padding: 8px; font-weight: bold; text-align: right;">${badBalls}</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #ddd;">
-                        <td style="padding: 8px;">总投球数</td>
-                        <td style="padding: 8px; font-weight: bold; text-align: right;">${totalPitches}</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #ddd;">
-                        <td style="padding: 8px;">好球率</td>
-                        <td style="padding: 8px; font-weight: bold; text-align: right; color: #27ae60;">${goodBallRate}%</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #ddd;">
-                        <td style="padding: 8px;">三振次数</td>
-                        <td style="padding: 8px; font-weight: bold; text-align: right;">${strikeouts}</td>
-                    </tr>
-                    <tr style="border-bottom: 1px solid #ddd;">
-                        <td style="padding: 8px;">安打数</td>
-                        <td style="padding: 8px; font-weight: bold; text-align: right;">${hits}</td>
-                    </tr>
-                    <tr>
-                        <td style="padding: 8px;">失分数</td>
-                        <td style="padding: 8px; font-weight: bold; text-align: right; color: #e74c3c;">${runs}</td>
-                    </tr>
-                </table>
-            </div>
-            
-            <div style="text-align: center; color: #666; font-size: 12px;">
-                九宫格进垒区标记：${spots.length} 好球 / ${badSpots.length} 坏球
+            <div style="display: flex; gap: 20px;">
+                <!-- 左侧：统计表 -->
+                <div style="flex: 1;">
+                    <div style="border: 2px solid #333; padding: 12px;">
+                        <h3 style="margin-bottom: 10px; color: #e74c3c;">📊 投球统计</h3>
+                        <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                            <tr style="border-bottom: 1px solid #ddd;">
+                                <td style="padding: 6px;">好球数</td>
+                                <td style="padding: 6px; font-weight: bold; text-align: right;">${goodBalls}</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #ddd;">
+                                <td style="padding: 6px;">坏球数</td>
+                                <td style="padding: 6px; font-weight: bold; text-align: right;">${badBalls}</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #ddd;">
+                                <td style="padding: 6px;">总投球数</td>
+                                <td style="padding: 6px; font-weight: bold; text-align: right;">${totalPitches}</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #ddd;">
+                                <td style="padding: 6px;">好球率</td>
+                                <td style="padding: 6px; font-weight: bold; text-align: right; color: #27ae60;">${goodBallRate}%</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #ddd;">
+                                <td style="padding: 6px;">三振次数</td>
+                                <td style="padding: 6px; font-weight: bold; text-align: right;">${strikeouts}</td>
+                            </tr>
+                            <tr style="border-bottom: 1px solid #ddd;">
+                                <td style="padding: 6px;">安打数</td>
+                                <td style="padding: 6px; font-weight: bold; text-align: right;">${hits}</td>
+                            </tr>
+                            <tr>
+                                <td style="padding: 6px;">失分数</td>
+                                <td style="padding: 6px; font-weight: bold; text-align: right; color: #e74c3c;">${runs}</td>
+                            </tr>
+                        </table>
+                    </div>
+                    
+                    <div style="margin-top: 15px; text-align: center; color: #666; font-size: 12px;">
+                        <span style="color: #27ae60;">●</span> 好球：${spots.length}个
+                        <span style="color: #e67e22; margin-left: 10px;">●</span> 坏球：${badSpots.length}个
+                    </div>
+                </div>
+                
+                <!-- 右侧：九宫格图 -->
+                <div style="flex: 0 0 200px;">
+                    <h3 style="margin-bottom: 8px; color: #e74c3c; text-align: center;">🎯 进垒区分布</h3>
+                    <img src="${canvasData}" style="width: 100%; border: 1px solid #ddd; border-radius: 8px;" />
+                    <div style="font-size: 10px; color: #999; text-align: center; margin-top: 5px;">
+                        红框=好球区(2/3) | 虚线=大参考区
+                    </div>
+                </div>
             </div>
         </div>
     `;
@@ -373,30 +417,36 @@ async function exportToPDF() {
     yPos += 10;
     
     // 训练名称
-    doc.setFontSize(16);
+    doc.setFontSize(14);
     doc.setTextColor(0, 0, 0);
     doc.text(trainingName, pageWidth / 2, yPos, { align: 'center' });
-    yPos += 12;
+    yPos += 8;
     
     // 基本信息
-    doc.setFontSize(10);
+    doc.setFontSize(9);
     doc.setTextColor(100, 100, 100);
     doc.text(`投手：${pitcherName}  |  日期：${trainingDate}  |  类型：${pitchType}`, pageWidth / 2, yPos, { align: 'center' });
-    yPos += 15;
+    yPos += 10;
     
     // 分隔线
     doc.setDrawColor(231, 76, 60);
     doc.line(margin, yPos, pageWidth - margin, yPos);
-    yPos += 10;
-    
-    // 统计表格标题
-    doc.setFontSize(14);
-    doc.setTextColor(52, 152, 219);
-    doc.text('投球统计', margin, yPos);
     yPos += 8;
     
+    // 将 Canvas 转换为图片
+    const canvasData = canvas.toDataURL('image/png');
+    
+    // ===== 左侧：统计表 =====
+    const statsX = margin;
+    const statsWidth = 80;
+    
+    doc.setFontSize(12);
+    doc.setTextColor(52, 152, 219);
+    doc.text('投球统计', statsX, yPos);
+    yPos += 6;
+    
     // 统计数据
-    doc.setFontSize(11);
+    doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
     
     const stats = [
@@ -411,47 +461,48 @@ async function exportToPDF() {
     
     stats.forEach((stat, i) => {
         doc.setFillColor(i % 2 === 0 ? 245 : 255, i % 2 === 0 ? 245 : 255, i % 2 === 0 ? 245 : 255);
-        doc.rect(margin, yPos - 4, pageWidth - margin * 2, 8, 'F');
-        doc.text(stat[0], margin + 5, yPos);
+        doc.rect(statsX, yPos - 3, statsWidth, 6, 'F');
+        doc.text(stat[0], statsX + 3, yPos);
         // 失分数用红色高亮
         if (stat[0] === '失分数') {
             doc.setTextColor(231, 76, 60);
-            doc.text(stat[1], pageWidth - margin - 5, yPos, { align: 'right' });
+            doc.text(stat[1], statsX + statsWidth - 3, yPos, { align: 'right' });
             doc.setTextColor(0, 0, 0);
         } else {
-            doc.text(stat[1], pageWidth - margin - 5, yPos, { align: 'right' });
+            doc.text(stat[1], statsX + statsWidth - 3, yPos, { align: 'right' });
         }
-        yPos += 8;
+        yPos += 6;
     });
     
+    // 好球/坏球标记数
+    yPos += 4;
+    doc.setFontSize(9);
+    doc.setTextColor(46, 204, 113);
+    doc.text(`● 好球标记: ${spots.length}个`, statsX, yPos);
+    yPos += 5;
+    doc.setTextColor(230, 126, 34);
+    doc.text(`● 坏球标记: ${badSpots.length}个`, statsX, yPos);
     yPos += 10;
     
-    // 九宫格进垒区标题
-    doc.setFontSize(14);
-    doc.setTextColor(52, 152, 219);
-    doc.text('九宫格进垒区分布图', margin, yPos);
-    yPos += 8;
-    
-    // 说明文字
-    doc.setFontSize(9);
-    doc.setTextColor(100, 100, 100);
-    doc.text(`好球：${spots.length} 个（绿色）| 坏球：${badSpots.length} 个（橙色）`, margin, yPos);
-    yPos += 6;
-    
-    // 将 Canvas 转换为图片并添加到 PDF（确保九宫格图完整导出）
-    const canvasData = canvas.toDataURL('image/png');
-    const imgWidth = 90;  // 稍微放大一点
+    // ===== 右侧：九宫格图 =====
+    const imgX = margin + statsWidth + 10;
+    const imgWidth = pageWidth - imgX - margin;
     const imgHeight = (canvas.height / canvas.width) * imgWidth;
     
-    // 确保图在页面范围内
-    const maxImgHeight = pageHeight - yPos - 15;
-    const finalHeight = Math.min(imgHeight, maxImgHeight);
-    const finalWidth = (finalHeight / imgHeight) * imgWidth;
-    const imgX = (pageWidth - finalWidth) / 2;
+    // 九宫格图标题
+    doc.setFontSize(12);
+    doc.setTextColor(52, 152, 219);
+    doc.text('进垒区分布图', imgX, yPos);
+    yPos += 4;
+    
+    doc.setFontSize(8);
+    doc.setTextColor(150, 150, 150);
+    doc.text('红框=好球区(2/3尺寸) | 虚线=大参考区', imgX, yPos);
+    yPos += 2;
     
     // 绘制九宫格图片
-    doc.addImage(canvasData, 'PNG', imgX, yPos, finalWidth, finalHeight);
-    yPos += finalHeight + 5;
+    doc.addImage(canvasData, 'PNG', imgX, yPos, imgWidth, imgHeight);
+    yPos += imgHeight + 5;
     
     // 底部信息
     doc.setFontSize(8);

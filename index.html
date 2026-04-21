@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>棒垒球投手训练记录</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- 顶部区域 -->
+        <header>
+            <h1>⚾ 棒垒球投手训练记录</h1>
+            <div class="header-form">
+                <div class="form-group">
+                    <label for="pitcherName">投手姓名（可选）</label>
+                    <input type="text" id="pitcherName" placeholder="输入投手姓名">
+                </div>
+                <div class="form-group">
+                    <label for="trainingName">训练名称</label>
+                    <input type="text" id="trainingName" placeholder="如：2026-04-21 速球训练">
+                </div>
+                <div class="form-group">
+                    <label for="pitchType">投球类型</label>
+                    <select id="pitchType">
+                        <option value="">选择类型</option>
+                        <option value="四缝线">四缝线 Fastball</option>
+                        <option value="二缝线">二缝线 2-Seam</option>
+                        <option value="滑球">滑球 Slider</option>
+                        <option value="曲球">曲球 Curveball</option>
+                        <option value="变速球">变速球 Changeup</option>
+                        <option value="切球">切球 Cutter</option>
+                        <option value="其他">其他</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>日期</label>
+                    <input type="date" id="trainingDate">
+                </div>
+            </div>
+        </header>
+
+        <!-- 主内容区域 -->
+        <main>
+            <!-- 左侧：九宫格进垒区 -->
+            <section class="strike-zone-section">
+                <h2>九宫格进垒区</h2>
+                <p class="hint">点击下方区域标记投球位置（好球）</p>
+                <div class="strike-zone-container">
+                    <canvas id="strikeZoneCanvas" width="360" height="480"></canvas>
+                    <div class="zone-labels">
+                        <div class="zone-row">
+                            <span>上</span><span>上中</span><span>上</span>
+                        </div>
+                        <div class="zone-row">
+                            <span>中</span><span>中</span><span>中</span>
+                        </div>
+                        <div class="zone-row">
+                            <span>下</span><span>下中</span><span>下</span>
+                        </div>
+                    </div>
+                    <div class="zone-labels-v">
+                        <span>内</span><span>中</span><span>外</span>
+                    </div>
+                </div>
+                <button id="clearSpots" class="btn btn-secondary">🗑️ 清空打点</button>
+            </section>
+
+            <!-- 右侧：数据录入与统计 -->
+            <section class="data-section">
+                <h2>投球数据统计</h2>
+                
+                <div class="data-form">
+                    <div class="input-group">
+                        <label for="goodBalls">好球数 ✅</label>
+                        <div class="number-input">
+                            <button class="btn-minus" data-target="goodBalls">−</button>
+                            <input type="number" id="goodBalls" value="0" min="0">
+                            <button class="btn-plus" data-target="goodBalls">+</button>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="badBalls">坏球数 ❌</label>
+                        <div class="number-input">
+                            <button class="btn-minus" data-target="badBalls">−</button>
+                            <input type="number" id="badBalls" value="0" min="0">
+                            <button class="btn-plus" data-target="badBalls">+</button>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="strikeouts">三振次数 🏃 K</label>
+                        <div class="number-input">
+                            <button class="btn-minus" data-target="strikeouts">−</button>
+                            <input type="number" id="strikeouts" value="0" min="0">
+                            <button class="btn-plus" data-target="strikeouts">+</button>
+                        </div>
+                    </div>
+                    
+                    <div class="input-group">
+                        <label for="hits">安打数 🧢</label>
+                        <div class="number-input">
+                            <button class="btn-minus" data-target="hits">−</button>
+                            <input type="number" id="hits" value="0" min="0">
+                            <button class="btn-plus" data-target="hits">+</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="stats-summary">
+                    <h3>📊 统计汇总</h3>
+                    <div class="stat-item">
+                        <span class="stat-label">总投球数：</span>
+                        <span class="stat-value" id="totalPitches">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">好球率：</span>
+                        <span class="stat-value" id="goodBallRate">0%</span>
+                    </div>
+                    <div class="stat-item highlight">
+                        <span class="stat-label">三振数：</span>
+                        <span class="stat-value" id="statStrikeouts">0</span>
+                    </div>
+                    <div class="stat-item highlight">
+                        <span class="stat-label">安打数：</span>
+                        <span class="stat-value" id="statHits">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">已标记球数：</span>
+                        <span class="stat-value" id="markedPitches">0</span>
+                    </div>
+                </div>
+            </section>
+        </main>
+
+        <!-- 底部按钮 -->
+        <footer>
+            <button id="resetAll" class="btn btn-danger">🔄 重置所有数据</button>
+            <button id="exportPDF" class="btn btn-primary">📄 导出 PDF</button>
+        </footer>
+    </div>
+
+    <!-- 预览模态框 -->
+    <div id="previewModal" class="modal">
+        <div class="modal-content">
+            <h2>📋 训练报告预览</h2>
+            <div id="pdfPreview"></div>
+            <div class="modal-buttons">
+                <button id="cancelPreview" class="btn btn-secondary">取消</button>
+                <button id="downloadPDF" class="btn btn-primary">下载 PDF</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>

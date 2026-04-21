@@ -45,22 +45,14 @@
         <main>
             <!-- 左侧：九宫格进垒区 -->
             <section class="strike-zone-section">
-                <h2>投球位置标记</h2>
-                <div class="mode-toggle">
-                    <button id="btnGoodMode" class="mode-btn active" onclick="setMode('good')">
-                        ✅ 好球区
-                    </button>
-                    <button id="btnBadMode" class="mode-btn" onclick="setMode('bad')">
-                        ❌ 坏球区
-                    </button>
-                </div>
-                <p class="hint" id="modeHint">点击下方区域标记好球位置（绿色点）</p>
+                <h2>进垒区分布图</h2>
+                <p class="hint">直接点击标记：红框内=好球(绿色点)，外围=坏球(橙色点)</p>
                 <div class="strike-zone-container">
                     <canvas id="strikeZoneCanvas" width="450" height="580"></canvas>
                 </div>
                 <div class="zone-legend">
-                    <span class="legend-item"><span class="dot green"></span> 好球</span>
-                    <span class="legend-item"><span class="dot orange"></span> 坏球</span>
+                    <span class="legend-item"><span class="dot green"></span> 好球（红框内）</span>
+                    <span class="legend-item"><span class="dot orange"></span> 坏球（外围区域）</span>
                 </div>
                 <button id="clearSpots" class="btn btn-secondary">🗑️ 清空打点</button>
             </section>

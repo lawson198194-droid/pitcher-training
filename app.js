@@ -3,10 +3,8 @@
  */
 
 // ===== 全局状态 =====
-let markedSpots = [];  // 存储标记的球位置
-let spots = [];        // Canvas上的标记点（好球）
-let badSpots = [];     // 坏球位置
-let currentMode = 'good'; // 当前模式：'good' 好球, 'bad' 坏球
+let spots = [];        // 好球位置（在小九宫格内）
+let badSpots = [];     // 坏球位置（在大九宫格但不在小九宫格内）
 
 // ===== 初始化 =====
 document.addEventListener('DOMContentLoaded', () => {
@@ -169,12 +167,18 @@ canvas.addEventListener('click', (e) => {
     
     const newSpot = { x, y };
     
-    if (currentMode === 'good') {
+    // 判断是否在小九宫格内（好球区）
+    const isInStrikeZone = x >= strikeZoneX && 
+                          x <= strikeZoneX + strikeZoneWidth &&
+                          y >= strikeZoneY && 
+                          y <= strikeZoneY + strikeZoneHeight;
+    
+    if (isInStrikeZone) {
+        // 在好球区内 → 绿色点
         spots.push(newSpot);
-        markedSpots.push({ ...newSpot, type: 'good' });
     } else {
+        // 在好球区外 → 橙色点（坏球）
         badSpots.push(newSpot);
-        markedSpots.push({ ...newSpot, type: 'bad' });
     }
     
     // 重绘
@@ -250,24 +254,7 @@ function setupEventListeners() {
     });
 }
 
-// ===== 模式切换函数 =====
-function setMode(mode) {
-    currentMode = mode;
-    
-    // 更新按钮样式
-    const btnGood = document.getElementById('btnGoodMode');
-    const btnBad = document.getElementById('btnBadMode');
-    
-    if (mode === 'good') {
-        btnGood.classList.add('active', 'good');
-        btnBad.classList.remove('active', 'bad');
-        document.getElementById('modeHint').textContent = '点击下方区域标记好球位置（绿色点）';
-    } else {
-        btnBad.classList.add('active', 'bad');
-        btnGood.classList.remove('active', 'good');
-        document.getElementById('modeHint').textContent = '点击下方区域标记坏球位置（橙色点）';
-    }
-}
+
 
 // ===== 更新统计数据 =====
 function updateStats() {

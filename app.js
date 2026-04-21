@@ -6,6 +6,10 @@
 let spots = [];        // 好球位置（在小九宫格内）
 let badSpots = [];     // 坏球位置（在大九宫格但不在小九宫格内）
 
+// ===== 尺寸变量（供点击判断用）=====
+let strikeZoneX, strikeZoneY, strikeZoneWidth, strikeZoneHeight;
+let largeZoneX, largeZoneY, largeZoneSize;
+
 // ===== 初始化 =====
 document.addEventListener('DOMContentLoaded', () => {
     // 设置默认日期为今天
@@ -29,14 +33,20 @@ function drawStrikeZone() {
     
     // 计算尺寸
     // 大九宫格占画布的 90%
-    const largeZoneSize = Math.min(canvas.width, canvas.height) * 0.9;
-    const largeZoneX = (canvas.width - largeZoneSize) / 2;
-    const largeZoneY = (canvas.height - largeZoneSize) / 2;
+    largeZoneSize = Math.min(canvas.width, canvas.height) * 0.9;
+    largeZoneX = (canvas.width - largeZoneSize) / 2;
+    largeZoneY = (canvas.height - largeZoneSize) / 2;
     
     // 小九宫格是大九宫格的 2/3
-    const smallZoneSize = largeZoneSize * (2 / 3);
-    const smallZoneX = (canvas.width - smallZoneSize) / 2;
-    const smallZoneY = (canvas.height - smallZoneSize) / 2;
+    strikeZoneWidth = largeZoneSize * (2 / 3);
+    strikeZoneHeight = largeZoneSize * (2 / 3);
+    strikeZoneX = (canvas.width - strikeZoneWidth) / 2;
+    strikeZoneY = (canvas.height - strikeZoneHeight) / 2;
+    
+    // 保持向后兼容
+    const smallZoneX = strikeZoneX;
+    const smallZoneY = strikeZoneY;
+    const smallZoneSize = strikeZoneWidth;
     
     const smallCellW = smallZoneSize / 3;
     const smallCellH = smallZoneSize / 3;
@@ -167,6 +177,14 @@ canvas.addEventListener('click', (e) => {
     
     const newSpot = { x, y };
     
+    // 判断是否在大九宫格内（只在区域内响应点击）
+    const isInLargeZone = x >= largeZoneX && 
+                          x <= largeZoneX + largeZoneSize &&
+                          y >= largeZoneY && 
+                          y <= largeZoneY + largeZoneSize;
+    
+    if (!isInLargeZone) return; // 点击在大九宫格外，忽略
+    
     // 判断是否在小九宫格内（好球区）
     const isInStrikeZone = x >= strikeZoneX && 
                           x <= strikeZoneX + strikeZoneWidth &&
@@ -177,7 +195,7 @@ canvas.addEventListener('click', (e) => {
         // 在好球区内 → 绿色点
         spots.push(newSpot);
     } else {
-        // 在好球区外 → 橙色点（坏球）
+        // 在大九宫格但不在小九宫格内 → 橙色点（坏球）
         badSpots.push(newSpot);
     }
     

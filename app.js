@@ -4,11 +4,9 @@
 
 // ===== 全局状态 =====
 let markedSpots = [];  // 存储标记的球位置
-let spots = [];        // Canvas上的标记点
-
-// ===== DOM 元素 =====
-const canvas = document.getElementById('strikeZoneCanvas');
-const ctx = canvas.getContext('2d');
+let spots = [];        // Canvas上的标记点（好球）
+let badSpots = [];     // 坏球位置
+let currentMode = 'good'; // 当前模式：'good' 好球, 'bad' 坏球
 
 // ===== 初始化 =====
 document.addEventListener('DOMContentLoaded', () => {
@@ -25,74 +23,102 @@ document.addEventListener('DOMContentLoaded', () => {
     updateStats();
 });
 
-// ===== 绘制九宫格进垒区 =====
+// ===== 绘制九宫格进垒区（缩小版 + 坏球外围区）=====
 function drawStrikeZone() {
     // 清空画布
     ctx.fillStyle = '#1a1a2e';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     
-    // 画布尺寸
-    const w = canvas.width;
-    const h = canvas.height;
-    const cellW = w / 3;
-    const cellH = h / 3;
+    // 好球区在中心位置
+    const zoneSize = Math.min(canvas.width, canvas.height) * 0.55; // 好球区占55%
+    const zoneX = (canvas.width - zoneSize) / 2;
+    const zoneY = (canvas.height - zoneSize) / 2;
+    const cellW = zoneSize / 3;
+    const cellH = zoneSize / 3;
     
-    // 绘制网格线
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-    ctx.lineWidth = 2;
+    // 绘制坏球外围区域（半透明灰色）
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.05)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    
+    // 好球区背景
+    ctx.fillStyle = 'rgba(46, 204, 113, 0.1)';
+    ctx.fillRect(zoneX, zoneY, zoneSize, zoneSize);
+    
+    // 绘制网格线（好球区）
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.lineWidth = 1;
     
     // 横线
     for (let i = 1; i < 3; i++) {
         ctx.beginPath();
-        ctx.moveTo(0, i * cellH);
-        ctx.lineTo(w, i * cellH);
+        ctx.moveTo(zoneX, zoneY + i * cellH);
+        ctx.lineTo(zoneX + zoneSize, zoneY + i * cellH);
         ctx.stroke();
     }
     
     // 竖线
     for (let i = 1; i < 3; i++) {
         ctx.beginPath();
-        ctx.moveTo(i * cellW, 0);
-        ctx.lineTo(i * cellW, h);
+        ctx.moveTo(zoneX + i * cellW, zoneY);
+        ctx.lineTo(zoneX + i * cellW, zoneY + zoneSize);
         ctx.stroke();
     }
     
-    // 外边框
+    // 好球区边框（红色粗线）
     ctx.strokeStyle = '#e74c3c';
     ctx.lineWidth = 3;
-    ctx.strokeRect(0, 0, w, h);
+    ctx.strokeRect(zoneX, zoneY, zoneSize, zoneSize);
     
-    // 添加区域标签
+    // 好球区标签（小字）
     ctx.fillStyle = 'rgba(255, 255, 255, 0.3)';
-    ctx.font = '14px Arial';
+    ctx.font = '11px Arial';
     ctx.textAlign = 'center';
     
     const labels = [
-        ['高内角', '高正中', '高外角'],
-        ['中内角', '好球区', '中外角'],
-        ['低内角', '低正中', '低外角']
+        ['高内', '高正', '高外'],
+        ['中内', '好球区', '中外'],
+        ['低内', '低正', '低外']
     ];
     
     for (let row = 0; row < 3; row++) {
         for (let col = 0; col < 3; col++) {
-            const x = col * cellW + cellW / 2;
-            const y = row * cellH + cellH / 2;
-            ctx.fillText(labels[row][col], x, y + 5);
+            const x = zoneX + col * cellW + cellW / 2;
+            const y = zoneY + row * cellH + cellH / 2;
+            ctx.fillText(labels[row][col], x, y + 4);
         }
     }
     
+    // 坏球区外围标签
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)';
+    ctx.font = '10px Arial';
+    
+    // 顶部标签
+    ctx.fillText('坏球区（高）', canvas.width / 2, zoneY - 15);
+    // 底部标签
+    ctx.fillText('坏球区（低）', canvas.width / 2, zoneY + zoneSize + 20);
+    // 左侧标签
+    ctx.fillText('外', zoneX - 20, canvas.height / 2);
+    // 右侧标签
+    ctx.fillText('内', zoneX + zoneSize + 20, canvas.height / 2);
+    
     // 重新绘制已保存的点
-    spots.forEach(spot => {
-        drawSpot(spot.x, spot.y);
+    // 好球（绿色）
+    spots.forEach((spot, index) => {
+        drawSpot(spot.x, spot.y, '#2ecc71', index + 1); // 绿色
+    });
+    
+    // 坏球（橙色）
+    badSpots.forEach((spot, index) => {
+        drawSpot(spot.x, spot.y, '#e67e22', spots.length + index + 1); // 橙色
     });
 }
 
 // ===== 绘制单个标记点 =====
-function drawSpot(x, y) {
-    // 粉色圆点
+function drawSpot(x, y, color = '#ff69b4', number = 1) {
+    // 圆点
     ctx.beginPath();
     ctx.arc(x, y, 8, 0, Math.PI * 2);
-    ctx.fillStyle = '#ff69b4';
+    ctx.fillStyle = color;
     ctx.fill();
     
     // 白色边框
@@ -101,11 +127,10 @@ function drawSpot(x, y) {
     ctx.stroke();
     
     // 编号
-    const index = spots.findIndex(s => s.x === x && s.y === y) + 1;
     ctx.fillStyle = '#fff';
-    ctx.font = 'bold 12px Arial';
+    ctx.font = 'bold 11px Arial';
     ctx.textAlign = 'center';
-    ctx.fillText(index.toString(), x, y + 4);
+    ctx.fillText(number.toString(), x, y + 4);
 }
 
 // ===== 处理画布点击 =====
@@ -117,9 +142,15 @@ canvas.addEventListener('click', (e) => {
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
     
-    // 添加新点
-    spots.push({ x, y });
-    markedSpots.push({ x, y });
+    const newSpot = { x, y };
+    
+    if (currentMode === 'good') {
+        spots.push(newSpot);
+        markedSpots.push({ ...newSpot, type: 'good' });
+    } else {
+        badSpots.push(newSpot);
+        markedSpots.push({ ...newSpot, type: 'bad' });
+    }
     
     // 重绘
     drawStrikeZone();
@@ -146,13 +177,14 @@ function setupEventListeners() {
     });
     
     // 直接输入时也更新统计
-    ['goodBalls', 'badBalls', 'strikeouts', 'hits'].forEach(id => {
+    ['goodBalls', 'badBalls', 'strikeouts', 'hits', 'runs'].forEach(id => {
         document.getElementById(id).addEventListener('input', updateStats);
     });
     
     // 清空打点按钮
     document.getElementById('clearSpots').addEventListener('click', () => {
         spots = [];
+        badSpots = [];
         markedSpots = [];
         drawStrikeZone();
         updateStats();
@@ -166,12 +198,14 @@ function setupEventListeners() {
             document.getElementById('badBalls').value = 0;
             document.getElementById('strikeouts').value = 0;
             document.getElementById('hits').value = 0;
+            document.getElementById('runs').value = 0;
             document.getElementById('pitcherName').value = '';
             document.getElementById('trainingName').value = '';
             document.getElementById('pitchType').value = '';
             
             // 清空打点
             spots = [];
+            badSpots = [];
             markedSpots = [];
             drawStrikeZone();
             updateStats();
@@ -191,12 +225,32 @@ function setupEventListeners() {
     });
 }
 
+// ===== 模式切换函数 =====
+function setMode(mode) {
+    currentMode = mode;
+    
+    // 更新按钮样式
+    const btnGood = document.getElementById('btnGoodMode');
+    const btnBad = document.getElementById('btnBadMode');
+    
+    if (mode === 'good') {
+        btnGood.classList.add('active', 'good');
+        btnBad.classList.remove('active', 'bad');
+        document.getElementById('modeHint').textContent = '点击下方区域标记好球位置（绿色点）';
+    } else {
+        btnBad.classList.add('active', 'bad');
+        btnGood.classList.remove('active', 'good');
+        document.getElementById('modeHint').textContent = '点击下方区域标记坏球位置（橙色点）';
+    }
+}
+
 // ===== 更新统计数据 =====
 function updateStats() {
     const goodBalls = parseInt(document.getElementById('goodBalls').value) || 0;
     const badBalls = parseInt(document.getElementById('badBalls').value) || 0;
     const strikeouts = parseInt(document.getElementById('strikeouts').value) || 0;
     const hits = parseInt(document.getElementById('hits').value) || 0;
+    const runs = parseInt(document.getElementById('runs').value) || 0;
     
     const totalPitches = goodBalls + badBalls;
     const goodBallRate = totalPitches > 0 ? ((goodBalls / totalPitches) * 100).toFixed(1) : 0;
@@ -205,7 +259,8 @@ function updateStats() {
     document.getElementById('goodBallRate').textContent = goodBallRate + '%';
     document.getElementById('statStrikeouts').textContent = strikeouts;
     document.getElementById('statHits').textContent = hits;
-    document.getElementById('markedPitches').textContent = spots.length;
+    document.getElementById('statRuns').textContent = runs;
+    document.getElementById('markedPitches').textContent = `${spots.length}好/${badSpots.length}坏`;
 }
 
 // ===== 显示预览 =====
@@ -261,15 +316,19 @@ function showPreview() {
                         <td style="padding: 8px;">三振次数</td>
                         <td style="padding: 8px; font-weight: bold; text-align: right;">${strikeouts}</td>
                     </tr>
-                    <tr>
+                    <tr style="border-bottom: 1px solid #ddd;">
                         <td style="padding: 8px;">安打数</td>
                         <td style="padding: 8px; font-weight: bold; text-align: right;">${hits}</td>
+                    </tr>
+                    <tr>
+                        <td style="padding: 8px;">失分数</td>
+                        <td style="padding: 8px; font-weight: bold; text-align: right; color: #e74c3c;">${runs}</td>
                     </tr>
                 </table>
             </div>
             
             <div style="text-align: center; color: #666; font-size: 12px;">
-                九宫格进垒区标记球数：${spots.length}
+                九宫格进垒区标记：${spots.length} 好球 / ${badSpots.length} 坏球
             </div>
         </div>
     `;
@@ -301,6 +360,7 @@ async function exportToPDF() {
     const badBalls = parseInt(document.getElementById('badBalls').value) || 0;
     const strikeouts = parseInt(document.getElementById('strikeouts').value) || 0;
     const hits = parseInt(document.getElementById('hits').value) || 0;
+    const runs = parseInt(document.getElementById('runs').value) || 0;
     const totalPitches = goodBalls + badBalls;
     const goodBallRate = totalPitches > 0 ? ((goodBalls / totalPitches) * 100).toFixed(1) : 0;
     
@@ -309,7 +369,7 @@ async function exportToPDF() {
     // 标题
     doc.setFontSize(20);
     doc.setTextColor(231, 76, 60);
-    doc.text('⚾ 投手训练报告', pageWidth / 2, yPos, { align: 'center' });
+    doc.text('投手训练报告', pageWidth / 2, yPos, { align: 'center' });
     yPos += 10;
     
     // 训练名称
@@ -332,7 +392,7 @@ async function exportToPDF() {
     // 统计表格标题
     doc.setFontSize(14);
     doc.setTextColor(52, 152, 219);
-    doc.text('📊 投球统计', margin, yPos);
+    doc.text('投球统计', margin, yPos);
     yPos += 8;
     
     // 统计数据
@@ -345,41 +405,53 @@ async function exportToPDF() {
         ['总投球数', totalPitches.toString()],
         ['好球率', goodBallRate + '%'],
         ['三振次数', strikeouts.toString()],
-        ['安打数', hits.toString()]
+        ['安打数', hits.toString()],
+        ['失分数', runs.toString()]
     ];
     
     stats.forEach((stat, i) => {
         doc.setFillColor(i % 2 === 0 ? 245 : 255, i % 2 === 0 ? 245 : 255, i % 2 === 0 ? 245 : 255);
         doc.rect(margin, yPos - 4, pageWidth - margin * 2, 8, 'F');
         doc.text(stat[0], margin + 5, yPos);
-        doc.text(stat[1], pageWidth - margin - 5, yPos, { align: 'right' });
+        // 失分数用红色高亮
+        if (stat[0] === '失分数') {
+            doc.setTextColor(231, 76, 60);
+            doc.text(stat[1], pageWidth - margin - 5, yPos, { align: 'right' });
+            doc.setTextColor(0, 0, 0);
+        } else {
+            doc.text(stat[1], pageWidth - margin - 5, yPos, { align: 'right' });
+        }
         yPos += 8;
     });
     
     yPos += 10;
     
-    // 九宫格进垒区信息
+    // 九宫格进垒区标题
     doc.setFontSize(14);
     doc.setTextColor(52, 152, 219);
-    doc.text('🎯 九宫格进垒区', margin, yPos);
+    doc.text('九宫格进垒区分布图', margin, yPos);
     yPos += 8;
     
-    doc.setFontSize(10);
+    // 说明文字
+    doc.setFontSize(9);
     doc.setTextColor(100, 100, 100);
-    doc.text(`已标记球数：${spots.length} 个`, margin, yPos);
-    yPos += 10;
+    doc.text(`好球：${spots.length} 个（绿色）| 坏球：${badSpots.length} 个（橙色）`, margin, yPos);
+    yPos += 6;
     
-    // 将 Canvas 转换为图片并添加到 PDF
-    if (spots.length > 0 || true) {
-        const canvasData = canvas.toDataURL('image/png');
-        const imgWidth = 80;
-        const imgHeight = (canvas.height / canvas.width) * imgWidth;
-        
-        // 绘制九宫格图片
-        doc.addImage(canvasData, 'PNG', (pageWidth - imgWidth) / 2, yPos, imgWidth, imgHeight);
-    }
+    // 将 Canvas 转换为图片并添加到 PDF（确保九宫格图完整导出）
+    const canvasData = canvas.toDataURL('image/png');
+    const imgWidth = 90;  // 稍微放大一点
+    const imgHeight = (canvas.height / canvas.width) * imgWidth;
     
-    yPos += 100;
+    // 确保图在页面范围内
+    const maxImgHeight = pageHeight - yPos - 15;
+    const finalHeight = Math.min(imgHeight, maxImgHeight);
+    const finalWidth = (finalHeight / imgHeight) * imgWidth;
+    const imgX = (pageWidth - finalWidth) / 2;
+    
+    // 绘制九宫格图片
+    doc.addImage(canvasData, 'PNG', imgX, yPos, finalWidth, finalHeight);
+    yPos += finalHeight + 5;
     
     // 底部信息
     doc.setFontSize(8);

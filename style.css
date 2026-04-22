@@ -33,6 +33,23 @@ header h1 {
     font-size: 1.8em;
 }
 
+.install-btn {
+    display: block;
+    margin: 0 auto 15px;
+    background: linear-gradient(135deg, #e74c3c, #c0392b);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+.install-btn:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 15px rgba(231, 76, 60, 0.4);
+}
+
 .header-form {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));

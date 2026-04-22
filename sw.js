@@ -1,10 +1,11 @@
-const CACHE_NAME = 'pitcher-training-v1';
+const CACHE_NAME = 'pitcher-training-v2';
 const ASSETS = [
-  '/pitcher-training/',
-  '/pitcher-training/index.html',
-  '/pitcher-training/style.css',
-  '/pitcher-training/app.js',
-  '/pitcher-training/manifest.json'
+  './',
+  './index.html',
+  './style.css',
+  './app.js',
+  './manifest.json',
+  './icon-192.svg'
 ];
 
 // Install - cache assets

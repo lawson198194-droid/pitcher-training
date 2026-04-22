@@ -2,6 +2,10 @@
  * 棒垒球投手训练记录 - 核心逻辑
  */
 
+// ===== 全局变量 =====
+const canvas = document.getElementById('strikeZoneCanvas');
+const ctx = canvas.getContext('2d');
+
 // ===== 全局状态 =====
 let spots = [];        // 好球位置（在小九宫格内）
 let badSpots = [];     // 坏球位置（在大九宫格但不在小九宫格内）

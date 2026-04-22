@@ -1,70 +1,68 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>棒垒球投手训练记录</title>
+    <title>Pitcher Training Tracker</title>
     <link rel="stylesheet" href="style.css">
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body>
     <div class="container">
-        <!-- 顶部区域 -->
+        <!-- Header -->
         <header>
-            <h1>⚾ 棒垒球投手训练记录</h1>
+            <h1>Pitcher Training Tracker</h1>
             <div class="header-form">
                 <div class="form-group">
-                    <label for="pitcherName">投手姓名（可选）</label>
-                    <input type="text" id="pitcherName" placeholder="输入投手姓名">
+                    <label for="pitcherName">Pitcher Name (Optional)</label>
+                    <input type="text" id="pitcherName" placeholder="Enter pitcher name">
                 </div>
                 <div class="form-group">
-                    <label for="trainingName">训练名称</label>
-                    <input type="text" id="trainingName" placeholder="如：2026-04-21 速球训练">
+                    <label for="trainingName">Training Name</label>
+                    <input type="text" id="trainingName" placeholder="e.g., 2026-04-22 Fastball Practice">
                 </div>
                 <div class="form-group">
-                    <label for="pitchType">投球类型</label>
+                    <label for="pitchType">Pitch Type</label>
                     <select id="pitchType">
-                        <option value="">选择类型</option>
-                        <option value="四缝线">四缝线 Fastball</option>
-                        <option value="二缝线">二缝线 2-Seam</option>
-                        <option value="滑球">滑球 Slider</option>
-                        <option value="曲球">曲球 Curveball</option>
-                        <option value="变速球">变速球 Changeup</option>
-                        <option value="切球">切球 Cutter</option>
-                        <option value="其他">其他</option>
+                        <option value="">Select Type</option>
+                        <option value="Four-seam">Four-seam Fastball</option>
+                        <option value="Two-seam">Two-seam 2-Seam</option>
+                        <option value="Slider">Slider</option>
+                        <option value="Curveball">Curveball</option>
+                        <option value="Changeup">Changeup</option>
+                        <option value="Cutter">Cutter</option>
+                        <option value="Other">Other</option>
                     </select>
                 </div>
                 <div class="form-group">
-                    <label>日期</label>
+                    <label>Date</label>
                     <input type="date" id="trainingDate">
                 </div>
             </div>
         </header>
 
-        <!-- 主内容区域 -->
+        <!-- Main Content -->
         <main>
-            <!-- 左侧：九宫格进垒区 -->
+            <!-- Left: Strike Zone Canvas -->
             <section class="strike-zone-section">
-                <h2>进垒区分布图</h2>
-                <p class="hint">直接点击标记：红框内=好球(绿色点)，外围=坏球(橙色点)</p>
+                <h2>Strike Zone Map</h2>
+                <p class="hint">Click to mark: Inside red border = Strike (green), Outside = Ball (orange)</p>
                 <div class="strike-zone-container">
                     <canvas id="strikeZoneCanvas" width="450" height="580"></canvas>
                 </div>
                 <div class="zone-legend">
-                    <span class="legend-item"><span class="dot green"></span> 好球（红框内）</span>
-                    <span class="legend-item"><span class="dot orange"></span> 坏球（外围区域）</span>
+                    <span class="legend-item"><span class="dot green"></span> Strike (inside red border)</span>
+                    <span class="legend-item"><span class="dot orange"></span> Ball (outside area)</span>
                 </div>
-                <button id="clearSpots" class="btn btn-secondary">🗑️ 清空打点</button>
+                <button id="clearSpots" class="btn btn-secondary">Clear Marks</button>
             </section>
 
-            <!-- 右侧：数据录入与统计 -->
+            <!-- Right: Data Entry & Stats -->
             <section class="data-section">
-                <h2>投球数据统计</h2>
+                <h2>Pitch Statistics</h2>
                 
                 <div class="data-form">
                     <div class="input-group">
-                        <label for="goodBalls">好球数 ✅</label>
+                        <label for="goodBalls">Strikes</label>
                         <div class="number-input">
                             <button class="btn-minus" data-target="goodBalls">−</button>
                             <input type="number" id="goodBalls" value="0" min="0">
@@ -73,7 +71,7 @@
                     </div>
                     
                     <div class="input-group">
-                        <label for="badBalls">坏球数 ❌</label>
+                        <label for="badBalls">Balls</label>
                         <div class="number-input">
                             <button class="btn-minus" data-target="badBalls">−</button>
                             <input type="number" id="badBalls" value="0" min="0">
@@ -82,7 +80,7 @@
                     </div>
                     
                     <div class="input-group">
-                        <label for="strikeouts">三振次数 🏃 K</label>
+                        <label for="strikeouts">Strikeouts K</label>
                         <div class="number-input">
                             <button class="btn-minus" data-target="strikeouts">−</button>
                             <input type="number" id="strikeouts" value="0" min="0">
@@ -91,7 +89,7 @@
                     </div>
                     
                     <div class="input-group">
-                        <label for="hits">安打数 🧢</label>
+                        <label for="hits">Hits</label>
                         <div class="number-input">
                             <button class="btn-minus" data-target="hits">−</button>
                             <input type="number" id="hits" value="0" min="0">
@@ -100,7 +98,7 @@
                     </div>
                     
                     <div class="input-group">
-                        <label for="runs">失分数 🏃💨</label>
+                        <label for="runs">Runs Scored</label>
                         <div class="number-input">
                             <button class="btn-minus" data-target="runs">−</button>
                             <input type="number" id="runs" value="0" min="0">
@@ -110,54 +108,83 @@
                 </div>
 
                 <div class="stats-summary">
-                    <h3>📊 统计汇总</h3>
+                    <h3>Summary</h3>
                     <div class="stat-item">
-                        <span class="stat-label">总投球数：</span>
+                        <span class="stat-label">Total Pitches:</span>
                         <span class="stat-value" id="totalPitches">0</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-label">好球率：</span>
+                        <span class="stat-label">Strike Rate:</span>
                         <span class="stat-value" id="goodBallRate">0%</span>
                     </div>
                     <div class="stat-item highlight">
-                        <span class="stat-label">三振数：</span>
+                        <span class="stat-label">Strikeouts:</span>
                         <span class="stat-value" id="statStrikeouts">0</span>
                     </div>
                     <div class="stat-item highlight">
-                        <span class="stat-label">安打数：</span>
+                        <span class="stat-label">Hits:</span>
                         <span class="stat-value" id="statHits">0</span>
                     </div>
                     <div class="stat-item highlight">
-                        <span class="stat-label">失分数：</span>
+                        <span class="stat-label">Runs:</span>
                         <span class="stat-value" id="statRuns">0</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-label">已标记球数：</span>
+                        <span class="stat-label">Marked:</span>
                         <span class="stat-value" id="markedPitches">0</span>
                     </div>
+                </div>
+
+                <!-- Save Training Button -->
+                <div style="margin-top: 20px;">
+                    <button id="saveTraining" class="btn btn-primary" style="width: 100%;">
+                        Save Training Record
+                    </button>
+                </div>
+
+                <!-- History Section -->
+                <div class="history-section">
+                    <h3>Training History</h3>
+                    <button id="showHistory" class="btn btn-secondary" style="width: 100%;">
+                        View History
+                    </button>
+                    <div id="historyList" class="history-list"></div>
                 </div>
             </section>
         </main>
 
-        <!-- 底部按钮 -->
+        <!-- Footer -->
         <footer>
-            <button id="resetAll" class="btn btn-danger">🔄 重置所有数据</button>
-            <button id="exportPDF" class="btn btn-primary">📄 导出 PDF</button>
+            <button id="resetAll" class="btn btn-danger">Reset All</button>
+            <button id="exportPDF" class="btn btn-primary">Export PDF</button>
         </footer>
     </div>
 
-    <!-- 预览模态框 -->
+    <!-- Preview Modal -->
     <div id="previewModal" class="modal">
         <div class="modal-content">
-            <h2>📋 训练报告预览</h2>
+            <h2>Training Report Preview</h2>
             <div id="pdfPreview"></div>
             <div class="modal-buttons">
-                <button id="cancelPreview" class="btn btn-secondary">取消</button>
-                <button id="downloadPDF" class="btn btn-primary">下载 PDF</button>
+                <button id="cancelPreview" class="btn btn-secondary">Cancel</button>
+                <button id="downloadPDF" class="btn btn-primary">Download PDF</button>
             </div>
         </div>
     </div>
 
+    <!-- History Modal -->
+    <div id="historyModal" class="modal">
+        <div class="modal-content" style="max-width: 900px;">
+            <h2>Training History</h2>
+            <div id="historyDetail" class="history-detail"></div>
+            <div class="modal-buttons">
+                <button id="closeHistory" class="btn btn-secondary">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="app.js"></script>
 </body>
 </html>

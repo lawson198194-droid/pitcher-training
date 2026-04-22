@@ -173,8 +173,14 @@ canvas.addEventListener('click', (e) => {
     
     if (isInStrikeZone) {
         spots.push({ x, y });
+        // Auto increment strikes counter
+        const strikesInput = document.getElementById('goodBalls');
+        strikesInput.value = parseInt(strikesInput.value || 0) + 1;
     } else {
         badSpots.push({ x, y });
+        // Click outside strike zone but inside large zone = ball
+        const ballsInput = document.getElementById('badBalls');
+        ballsInput.value = parseInt(ballsInput.value || 0) + 1;
     }
     
     drawStrikeZone();
@@ -199,7 +205,7 @@ function setupEventListeners() {
         });
     });
     
-    ['goodBalls', 'badBalls', 'strikeouts', 'hits', 'runs'].forEach(id => {
+    ['goodBalls', 'badBalls', 'strikeouts', 'walks', 'hits', 'runs'].forEach(id => {
         document.getElementById(id).addEventListener('input', updateStats);
     });
     

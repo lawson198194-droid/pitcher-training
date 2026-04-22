@@ -228,19 +228,31 @@ document.getElementById('installBtn').addEventListener('click', async () => {
         }
         deferredPrompt = null;
     } else {
-        // Detect browser and show appropriate instructions
-        const isWeChat = /MicroMessenger/.test(navigator.userAgent);
+        // iOS Safari - trigger native share menu
         const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
         
-        if (isWeChat) {
-            alert('Please open in Safari first:\n\n1. Tap "..." at top right\n2. Select "Open in Safari"\n3. Then tap "+ Add to Home Screen"');
-        } else if (isIOS) {
-            alert('To install:\n\n1. Tap Share button at bottom\n2. Scroll down\n3. Tap "Add to Home Screen"');
+        if (isIOS) {
+            // iOS Safari: Use native share menu to trigger Add to Home Screen
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Pitcher Training Tracker',
+                    url: window.location.href
+                }).catch(() => {});
+            }
+            // Show instructions for iOS
+            alert('iOS Safari 安装步骤:\n\n1. 点击底部 Safari 的分享按钮 (方形箭头↑)\n2. 向下滚动找到 "添加到主屏幕"\n3. 点击它 → 添加');
+        } else if (/MicroMessenger/.test(navigator.userAgent)) {
+            alert('请先在 Safari 中打开:\n\n1. 点击右上角 "..."\n2. 选择 "在 Safari 中打开"\n3. 再按上述步骤安装');
         } else {
-            alert('To install:\n\n1. Open browser menu\n2. Select "Add to Home Screen"');
+            alert('安装步骤:\n\n1. 点击浏览器菜单 (⋮)\n2. 选择 "添加到主屏幕" 或 "安装"\n3. 按提示确认');
         }
     }
 });
+
+// iOS Safari: Auto-show instructions on page load
+if (/iPhone|iPad|iPod/.test(navigator.userAgent) && !/CriOS/.test(navigator.userAgent)) {
+    document.getElementById('installBtn').textContent = '📱 iOS: Tap Share ↑ then "Add to Home Screen"';
+}
 
 // Install prompt button
 document.getElementById('installBtnPrompt')?.addEventListener('click', async () => {

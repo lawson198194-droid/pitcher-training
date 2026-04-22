@@ -9,7 +9,13 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect fill='%231a1a2e' width='512' height='512' rx='64'/><circle cx='256' cy='256' r='180' fill='%23e74c3c'/><circle cx='256' cy='256' r='120' fill='%231a1a2e' stroke='%232ecc71' stroke-width='8'/><circle cx='256' cy='256' r='60' fill='%23fff'/></svg>",
+      "src": "icon-192.svg",
+      "sizes": "192x192",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-192.svg",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"

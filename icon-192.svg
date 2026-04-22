@@ -1,13 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192">
-  <circle cx="96" cy="96" r="96" fill="#e74c3c"/>
-  <circle cx="96" cy="96" r="75" fill="white" stroke="#333" stroke-width="2"/>
-  <!-- Strike Zone Grid -->
-  <rect x="46" y="46" width="100" height="100" fill="none" stroke="#e74c3c" stroke-width="3" rx="5"/>
-  <line x1="46" y1="79" x2="146" y2="79" stroke="#ddd" stroke-width="1"/>
-  <line x1="46" y1="112" x2="146" y2="112" stroke="#ddd" stroke-width="1"/>
-  <line x1="79" y1="46" x2="79" y2="146" stroke="#ddd" stroke-width="1"/>
-  <line x1="112" y1="46" x2="112" y2="146" stroke="#ddd" stroke-width="1"/>
-  <!-- Strike Mark -->
-  <circle cx="79" cy="79" r="8" fill="#2ecc71"/>
-  <circle cx="112" cy="112" r="8" fill="#e67e22"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect fill="#1a1a2e" width="512" height="512" rx="80"/>
+  <circle cx="256" cy="256" r="180" fill="#e74c3c"/>
+  <circle cx="256" cy="256" r="120" fill="#1a1a2e" stroke="#2ecc71" stroke-width="12"/>
+  <circle cx="256" cy="256" r="50" fill="#fff"/>
 </svg>

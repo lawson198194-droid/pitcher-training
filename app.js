@@ -325,8 +325,8 @@ function loadHistoryList() {
         return;
     }
     
-    // Only show latest 5 records
-    const displayRecords = history.slice(0, 5);
+    // Only show latest 3 records
+    const displayRecords = history.slice(0, 3);
     
     listContainer.innerHTML = displayRecords.map(record => `
         <div class="history-item" onclick="viewHistoryRecord(${record.id})">
@@ -339,8 +339,8 @@ function loadHistoryList() {
     `).join('');
     
     // Show "more" indicator if there are more records
-    if (history.length > 5) {
-        listContainer.innerHTML += `<p style="color: #666; text-align: center; padding: 10px; font-size: 12px;">+ ${history.length - 5} more records (click to view details)</p>`;
+    if (history.length > 3) {
+        listContainer.innerHTML += `<p style="color: #666; text-align: center; padding: 10px; font-size: 12px;">+ ${history.length - 3} more records (click to view details)</p>`;
     }
 }
 

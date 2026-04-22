@@ -228,7 +228,17 @@ document.getElementById('installBtn').addEventListener('click', async () => {
         }
         deferredPrompt = null;
     } else {
-        alert('To install: Open menu (⋮) → Add to Home Screen');
+        // Detect browser and show appropriate instructions
+        const isWeChat = /MicroMessenger/.test(navigator.userAgent);
+        const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+        
+        if (isWeChat) {
+            alert('Please open in Safari first:\n\n1. Tap "..." at top right\n2. Select "Open in Safari"\n3. Then tap "+ Add to Home Screen"');
+        } else if (isIOS) {
+            alert('To install:\n\n1. Tap Share button at bottom\n2. Scroll down\n3. Tap "Add to Home Screen"');
+        } else {
+            alert('To install:\n\n1. Open browser menu\n2. Select "Add to Home Screen"');
+        }
     }
 });
 

@@ -19,6 +19,9 @@
     <header>
         <h1>Pitcher Training Tracker</h1>
         <button id="installBtn" class="btn btn-secondary install-btn">+ Add to Home Screen</button>
+        <div class="install-guide">
+            <strong>iOS 安装:</strong> 点底部分享按钮 → 向下滚动 → 添加到主屏幕
+        </div>
         <div class="header-form">
             <div class="form-group">
                 <label for="pitcherName">Pitcher Name (Optional)</label>
@@ -218,40 +221,28 @@ window.addEventListener('beforeinstallprompt', (e) => {
     setTimeout(showInstallPrompt, 2000);
 });
 
-// Auto-install button click
-document.getElementById('installBtn').addEventListener('click', async () => {
-    if (deferredPrompt) {
-        deferredPrompt.prompt();
-        const { outcome } = await deferredPrompt.userChoice;
-        if (outcome === 'accepted') {
-            document.getElementById('installBtn').style.display = 'none';
-        }
-        deferredPrompt = null;
+// Auto-install button click - Show manual instructions
+document.getElementById('installBtn').addEventListener('click', () => {
+    const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
+    
+    if (isIOS) {
+        alert('iOS Safari 安装步骤:\n\n' +
+              '1. 点底部 Safari 菜单栏的 分享按钮 (方形箭头↑)\n' +
+              '2. 向下滚动滚动条\n' +
+              '3. 点击 "添加到主屏幕"\n' +
+              '4. 点右上角 "添加" 按钮');
+    } else if (/MicroMessenger/.test(navigator.userAgent)) {
+        alert('请按以下步骤操作:\n\n1. 长按页面\n2. 选择 "在Safari中打开"\n3. 然后按iOS安装步骤操作');
     } else {
-        // iOS Safari - trigger native share menu
-        const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-        
-        if (isIOS) {
-            // iOS Safari: Use native share menu to trigger Add to Home Screen
-            if (navigator.share) {
-                navigator.share({
-                    title: 'Pitcher Training Tracker',
-                    url: window.location.href
-                }).catch(() => {});
-            }
-            // Show instructions for iOS
-            alert('iOS Safari 安装步骤:\n\n1. 点击底部 Safari 的分享按钮 (方形箭头↑)\n2. 向下滚动找到 "添加到主屏幕"\n3. 点击它 → 添加');
-        } else if (/MicroMessenger/.test(navigator.userAgent)) {
-            alert('请先在 Safari 中打开:\n\n1. 点击右上角 "..."\n2. 选择 "在 Safari 中打开"\n3. 再按上述步骤安装');
-        } else {
-            alert('安装步骤:\n\n1. 点击浏览器菜单 (⋮)\n2. 选择 "添加到主屏幕" 或 "安装"\n3. 按提示确认');
-        }
+        alert('安装步骤:\n\n1. 打开浏览器菜单\n2. 选择 "添加到主屏幕" 或 "安装应用"\n3. 按提示确认');
     }
 });
 
-// iOS Safari: Auto-show instructions on page load
-if (/iPhone|iPad|iPod/.test(navigator.userAgent) && !/CriOS/.test(navigator.userAgent)) {
-    document.getElementById('installBtn').textContent = '📱 iOS: Tap Share ↑ then "Add to Home Screen"';
+// Update button text based on device
+if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
+    document.getElementById('installBtn').textContent = '📱 Add to Home Screen (iOS)';
+} else if (/Android/.test(navigator.userAgent)) {
+    document.getElementById('installBtn').textContent = '🤖 Add to Home Screen (Android)';
 }
 
 // Install prompt button

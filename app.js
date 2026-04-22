@@ -1,47 +1,38 @@
 /**
- * 棒垒球投手训练记录 - 核心逻辑
+ * Pitcher Training Tracker - Core Logic (English Version)
  */
 
-// ===== 全局变量 =====
+// ===== Global Variables =====
 const canvas = document.getElementById('strikeZoneCanvas');
 const ctx = canvas.getContext('2d');
 
-// ===== 全局状态 =====
-let spots = [];        // 好球位置（在小九宫格内）
-let badSpots = [];     // 坏球位置（在大九宫格但不在小九宫格内）
-
-// ===== 尺寸变量（供点击判断用）=====
+// ===== Global State =====
+let spots = [];
+let badSpots = [];
 let strikeZoneX, strikeZoneY, strikeZoneWidth, strikeZoneHeight;
 let largeZoneX, largeZoneY, largeZoneSize;
 
-// ===== 初始化 =====
+// ===== Storage Key =====
+const STORAGE_KEY = 'pitcher_training_history';
+
+// ===== Initialize =====
 document.addEventListener('DOMContentLoaded', () => {
-    // 设置默认日期为今天
     document.getElementById('trainingDate').valueAsDate = new Date();
-    
-    // 绘制九宫格
     drawStrikeZone();
-    
-    // 绑定事件
     setupEventListeners();
-    
-    // 初始化统计
     updateStats();
+    loadHistoryList();
 });
 
-// ===== 绘制九宫格进垒区（双层结构：大九宫格 + 小九宫格）=====
+// ===== Draw Strike Zone =====
 function drawStrikeZone() {
-    // 清空画布
     ctx.fillStyle = '#1a1a2e';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    // 计算尺寸
-    // 大九宫格占画布的 90%
     largeZoneSize = Math.min(canvas.width, canvas.height) * 0.9;
     largeZoneX = (canvas.width - largeZoneSize) / 2;
     largeZoneY = (canvas.height - largeZoneSize) / 2;
     
-    // 小九宫格是大九宫格的 2/3（好球区）
     strikeZoneWidth = largeZoneSize * (2 / 3);
     strikeZoneHeight = largeZoneSize * (2 / 3);
     strikeZoneX = (canvas.width - strikeZoneWidth) / 2;
@@ -53,15 +44,14 @@ function drawStrikeZone() {
     const smallCellW = smallZoneSize / 3;
     const smallCellH = smallZoneSize / 3;
 
-    // 绘制坏球外围区域（半透明灰色 - 填充整个大九宫格）
+    // Outer zone background (gray - ball area)
     ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
     ctx.fillRect(largeZoneX, largeZoneY, largeZoneSize, largeZoneSize);
 
-    // 大九宫格的网格线（半透明）
+    // Outer zone grid lines
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
     ctx.lineWidth = 1;
     
-    // 大九宫格的横线
     for (let i = 1; i < 3; i++) {
         ctx.beginPath();
         ctx.moveTo(largeZoneX, largeZoneY + i * (largeZoneSize / 3));
@@ -69,7 +59,6 @@ function drawStrikeZone() {
         ctx.stroke();
     }
     
-    // 大九宫格的竖线
     for (let i = 1; i < 3; i++) {
         ctx.beginPath();
         ctx.moveTo(largeZoneX + i * (largeZoneSize / 3), largeZoneY);
@@ -77,15 +66,14 @@ function drawStrikeZone() {
         ctx.stroke();
     }
 
-    // 好球区背景（绿色半透明）
+    // Strike zone background (green)
     ctx.fillStyle = 'rgba(46, 204, 113, 0.15)';
     ctx.fillRect(smallZoneX, smallZoneY, smallZoneSize, smallZoneSize);
 
-    // 小九宫格的网格线（实线白色）
+    // Strike zone grid lines
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
     ctx.lineWidth = 1;
     
-    // 小九宫格的横线
     for (let i = 1; i < 3; i++) {
         ctx.beginPath();
         ctx.moveTo(smallZoneX, smallZoneY + i * smallCellH);
@@ -93,7 +81,6 @@ function drawStrikeZone() {
         ctx.stroke();
     }
     
-    // 小九宫格的竖线
     for (let i = 1; i < 3; i++) {
         ctx.beginPath();
         ctx.moveTo(smallZoneX + i * smallCellW, smallZoneY);
@@ -101,27 +88,27 @@ function drawStrikeZone() {
         ctx.stroke();
     }
 
-    // 小九宫格边框（红色粗线 - 好球区）
+    // Strike zone border (red)
     ctx.strokeStyle = '#e74c3c';
     ctx.lineWidth = 3;
     ctx.strokeRect(smallZoneX, smallZoneY, smallZoneSize, smallZoneSize);
 
-    // 大九宫格边框（蓝色虚线 - 坏球参考区）
+    // Outer zone border (blue dashed)
     ctx.setLineDash([8, 5]);
     ctx.strokeStyle = 'rgba(52, 152, 219, 0.8)';
     ctx.lineWidth = 3;
     ctx.strokeRect(largeZoneX, largeZoneY, largeZoneSize, largeZoneSize);
     ctx.setLineDash([]);
 
-    // 好球区标签
+    // Labels for strike zone
     ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
     ctx.font = '11px Arial';
     ctx.textAlign = 'center';
 
     const labels = [
-        ['高内', '高中', '高外'],
-        ['中内', '好球区', '中外'],
-        ['低内', '低中', '低外']
+        ['High-In', 'High-Mid', 'High-Out'],
+        ['Mid-In', 'STRIKE', 'Mid-Out'],
+        ['Low-In', 'Low-Mid', 'Low-Out']
     ];
 
     for (let row = 0; row < 3; row++) {
@@ -132,51 +119,42 @@ function drawStrikeZone() {
         }
     }
 
-    // 坏球区标签（大九宫格四个角落）
+    // Ball zone labels
     ctx.fillStyle = 'rgba(255, 255, 255, 0.25)';
     ctx.font = '10px Arial';
-    // 顶部
-    ctx.fillText('坏球区（高）', canvas.width / 2, largeZoneY - 8);
-    // 底部
-    ctx.fillText('坏球区（低）', canvas.width / 2, largeZoneY + largeZoneSize + 15);
-    // 左侧
-    ctx.fillText('外', largeZoneX - 12, canvas.height / 2);
-    // 右侧
-    ctx.fillText('外', largeZoneX + largeZoneSize + 12, canvas.height / 2);
+    ctx.fillText('BALL (High)', canvas.width / 2, largeZoneY - 8);
+    ctx.fillText('BALL (Low)', canvas.width / 2, largeZoneY + largeZoneSize + 15);
+    ctx.fillText('OUT', largeZoneX - 12, canvas.height / 2);
+    ctx.fillText('OUT', largeZoneX + largeZoneSize + 12, canvas.height / 2);
     
-    // 重新绘制已保存的点
-    // 好球（绿色）
+    // Draw saved spots
     spots.forEach((spot, index) => {
         drawSpot(spot.x, spot.y, '#2ecc71', index + 1);
     });
     
-    // 坏球（橙色）
     badSpots.forEach((spot, index) => {
         drawSpot(spot.x, spot.y, '#e67e22', spots.length + index + 1);
     });
 }
 
-// ===== 绘制单个标记点 =====
+// ===== Draw Spot =====
 function drawSpot(x, y, color = '#ff69b4', number = 1) {
-    // 圆点
     ctx.beginPath();
     ctx.arc(x, y, 8, 0, Math.PI * 2);
     ctx.fillStyle = color;
     ctx.fill();
     
-    // 白色边框
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 2;
     ctx.stroke();
     
-    // 编号
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 11px Arial';
     ctx.textAlign = 'center';
     ctx.fillText(number.toString(), x, y + 4);
 }
 
-// ===== 处理画布点击 =====
+// ===== Canvas Click Handler =====
 canvas.addEventListener('click', (e) => {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
@@ -185,38 +163,26 @@ canvas.addEventListener('click', (e) => {
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
     
-    const newSpot = { x, y };
+    const isInLargeZone = x >= largeZoneX && x <= largeZoneX + largeZoneSize &&
+                          y >= largeZoneY && y <= largeZoneY + largeZoneSize;
     
-    // 判断是否在大九宫格内（只在区域内响应点击）
-    const isInLargeZone = x >= largeZoneX && 
-                          x <= largeZoneX + largeZoneSize &&
-                          y >= largeZoneY && 
-                          y <= largeZoneY + largeZoneSize;
+    if (!isInLargeZone) return;
     
-    if (!isInLargeZone) return; // 点击在大九宫格外，忽略
-    
-    // 判断是否在小九宫格内（好球区）
-    const isInStrikeZone = x >= strikeZoneX && 
-                          x <= strikeZoneX + strikeZoneWidth &&
-                          y >= strikeZoneY && 
-                          y <= strikeZoneY + strikeZoneHeight;
+    const isInStrikeZone = x >= strikeZoneX && x <= strikeZoneX + strikeZoneWidth &&
+                           y >= strikeZoneY && y <= strikeZoneY + strikeZoneHeight;
     
     if (isInStrikeZone) {
-        // 在好球区内 → 绿色点
-        spots.push(newSpot);
+        spots.push({ x, y });
     } else {
-        // 在大九宫格但不在小九宫格内 → 橙色点（坏球）
-        badSpots.push(newSpot);
+        badSpots.push({ x, y });
     }
     
-    // 重绘
     drawStrikeZone();
     updateStats();
 });
 
-// ===== 绑定事件监听 =====
+// ===== Event Listeners =====
 function setupEventListeners() {
-    // 好球/坏球 +/- 按钮
     document.querySelectorAll('.btn-plus').forEach(btn => {
         btn.addEventListener('click', () => {
             const target = document.getElementById(btn.dataset.target);
@@ -233,24 +199,19 @@ function setupEventListeners() {
         });
     });
     
-    // 直接输入时也更新统计
     ['goodBalls', 'badBalls', 'strikeouts', 'hits', 'runs'].forEach(id => {
         document.getElementById(id).addEventListener('input', updateStats);
     });
     
-    // 清空打点按钮
     document.getElementById('clearSpots').addEventListener('click', () => {
         spots = [];
         badSpots = [];
-        markedSpots = [];
         drawStrikeZone();
         updateStats();
     });
     
-    // 重置所有数据
     document.getElementById('resetAll').addEventListener('click', () => {
-        if (confirm('确定要重置所有数据吗？')) {
-            // 重置表单
+        if (confirm('Reset all data?')) {
             document.getElementById('goodBalls').value = 0;
             document.getElementById('badBalls').value = 0;
             document.getElementById('strikeouts').value = 0;
@@ -260,31 +221,32 @@ function setupEventListeners() {
             document.getElementById('trainingName').value = '';
             document.getElementById('pitchType').value = '';
             
-            // 清空打点
             spots = [];
             badSpots = [];
-            markedSpots = [];
             drawStrikeZone();
             updateStats();
         }
     });
     
-    // 导出 PDF 按钮
     document.getElementById('exportPDF').addEventListener('click', showPreview);
-    
-    // 预览模态框按钮
     document.getElementById('cancelPreview').addEventListener('click', closePreview);
     document.getElementById('downloadPDF').addEventListener('click', exportToPDF);
-    
-    // 点击模态框外部关闭
     document.getElementById('previewModal').addEventListener('click', (e) => {
         if (e.target.id === 'previewModal') closePreview();
     });
+
+    // History buttons
+    document.getElementById('showHistory').addEventListener('click', showHistory);
+    document.getElementById('closeHistory').addEventListener('click', closeHistory);
+    document.getElementById('historyModal').addEventListener('click', (e) => {
+        if (e.target.id === 'historyModal') closeHistory();
+    });
+
+    // Save training button
+    document.getElementById('saveTraining').addEventListener('click', saveTraining);
 }
 
-
-
-// ===== 更新统计数据 =====
+// ===== Update Stats =====
 function updateStats() {
     const goodBalls = parseInt(document.getElementById('goodBalls').value) || 0;
     const badBalls = parseInt(document.getElementById('badBalls').value) || 0;
@@ -300,18 +262,215 @@ function updateStats() {
     document.getElementById('statStrikeouts').textContent = strikeouts;
     document.getElementById('statHits').textContent = hits;
     document.getElementById('statRuns').textContent = runs;
-    document.getElementById('markedPitches').textContent = `${spots.length}好/${badSpots.length}坏`;
+    document.getElementById('markedPitches').textContent = `${spots.length}S / ${badSpots.length}B`;
 }
 
-// ===== 显示预览 =====
+// ===== Save Training =====
+function saveTraining() {
+    const trainingName = document.getElementById('trainingName').value || 'Training ' + new Date().toISOString().split('T')[0];
+    const trainingDate = document.getElementById('trainingDate').value || new Date().toISOString().split('T')[0];
+    const pitcherName = document.getElementById('pitcherName').value || 'Unknown';
+    const pitchType = document.getElementById('pitchType').value || 'N/A';
+    const goodBalls = parseInt(document.getElementById('goodBalls').value) || 0;
+    const badBalls = parseInt(document.getElementById('badBalls').value) || 0;
+    const strikeouts = parseInt(document.getElementById('strikeouts').value) || 0;
+    const hits = parseInt(document.getElementById('hits').value) || 0;
+    const runs = parseInt(document.getElementById('runs').value) || 0;
+
+    const record = {
+        id: Date.now(),
+        trainingName,
+        trainingDate,
+        pitcherName,
+        pitchType,
+        goodBalls,
+        badBalls,
+        strikeouts,
+        hits,
+        runs,
+        spots: [...spots],
+        badSpots: [...badSpots]
+    };
+
+    // Get existing history
+    let history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    
+    // Add new record
+    history.unshift(record);
+    
+    // Save to localStorage
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
+    
+    // Update history list
+    loadHistoryList();
+    
+    alert('Training saved successfully!');
+}
+
+// ===== Load History List =====
+function loadHistoryList() {
+    const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    const listContainer = document.getElementById('historyList');
+    
+    if (history.length === 0) {
+        listContainer.innerHTML = '<p style="color: #999; text-align: center; padding: 10px;">No records yet</p>';
+        return;
+    }
+    
+    listContainer.innerHTML = history.slice(0, 10).map(record => `
+        <div class="history-item" onclick="viewHistoryRecord(${record.id})">
+            <div class="history-date">${record.trainingDate}</div>
+            <div class="history-name">${record.trainingName}</div>
+            <div class="history-stats">
+                Strikes: ${record.goodBalls} | Balls: ${record.badBalls} | K: ${record.strikeouts}
+            </div>
+        </div>
+    `).join('');
+}
+
+// ===== View History Record =====
+function viewHistoryRecord(id) {
+    const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
+    const record = history.find(r => r.id === id);
+    
+    if (!record) return;
+    
+    const detailContainer = document.getElementById('historyDetail');
+    const totalPitches = record.goodBalls + record.badBalls;
+    const strikeRate = totalPitches > 0 ? ((record.goodBalls / totalPitches) * 100).toFixed(1) : 0;
+    
+    // Create mini canvas for spot visualization
+    const miniCanvasId = 'miniCanvas_' + id;
+    
+    detailContainer.innerHTML = `
+        <div style="display: flex; gap: 20px;">
+            <div style="flex: 1;">
+                <h3 style="color: #e74c3c; border-bottom: 2px solid #e74c3c; padding-bottom: 10px;">${record.trainingName}</h3>
+                <p style="color: #666; margin-bottom: 15px;">
+                    Pitcher: ${record.pitcherName} | Date: ${record.trainingDate} | Type: ${record.pitchType}
+                </p>
+                <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+                    <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;">Strikes</td><td style="padding: 8px; text-align: right; font-weight: bold;">${record.goodBalls}</td></tr>
+                    <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;">Balls</td><td style="padding: 8px; text-align: right; font-weight: bold;">${record.badBalls}</td></tr>
+                    <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;">Total Pitches</td><td style="padding: 8px; text-align: right; font-weight: bold;">${totalPitches}</td></tr>
+                    <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;">Strike Rate</td><td style="padding: 8px; text-align: right; font-weight: bold; color: #27ae60;">${strikeRate}%</td></tr>
+                    <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;">Strikeouts</td><td style="padding: 8px; text-align: right; font-weight: bold;">${record.strikeouts}</td></tr>
+                    <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;">Hits</td><td style="padding: 8px; text-align: right; font-weight: bold;">${record.hits}</td></tr>
+                    <tr><td style="padding: 8px; color: #e74c3c;">Runs</td><td style="padding: 8px; text-align: right; font-weight: bold; color: #e74c3c;">${record.runs}</td></tr>
+                </table>
+                <div style="margin-top: 15px; font-size: 12px; color: #666;">
+                    <span style="color: #27ae60;">●</span> Strikes marked: ${record.spots ? record.spots.length : 0}
+                    <span style="color: #e67e22; margin-left: 10px;">●</span> Balls marked: ${record.badSpots ? record.badSpots.length : 0}
+                </div>
+            </div>
+            <div style="flex: 0 0 250px;">
+                <h4 style="color: #e74c3c; text-align: center;">Strike Zone Map</h4>
+                <canvas id="${miniCanvasId}" width="200" height="250" style="border: 1px solid #ddd; border-radius: 8px;"></canvas>
+            </div>
+        </div>
+    `;
+    
+    // Draw mini strike zone
+    setTimeout(() => {
+        const miniCanvas = document.getElementById(miniCanvasId);
+        if (miniCanvas) {
+            const miniCtx = miniCanvas.getContext('2d');
+            drawMiniStrikeZone(miniCtx, miniCanvas.width, miniCanvas.height, record.spots, record.badSpots);
+        }
+    }, 100);
+    
+    document.getElementById('historyModal').classList.add('active');
+}
+
+// ===== Draw Mini Strike Zone =====
+function drawMiniStrikeZone(ctx, width, height, spotsArr, badSpotsArr) {
+    ctx.fillStyle = '#1a1a2e';
+    ctx.fillRect(0, 0, width, height);
+
+    const zoneSize = Math.min(width, height) * 0.85;
+    const zoneX = (width - zoneSize) / 2;
+    const zoneY = (height - zoneSize) / 2;
+    const smallSize = zoneSize * (2 / 3);
+    const smallX = (width - smallSize) / 2;
+    const smallY = (height - smallSize) / 2;
+
+    // Draw zones
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
+    ctx.fillRect(zoneX, zoneY, zoneSize, zoneSize);
+    
+    ctx.fillStyle = 'rgba(46, 204, 113, 0.15)';
+    ctx.fillRect(smallX, smallY, smallSize, smallSize);
+
+    // Grid lines
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    ctx.lineWidth = 0.5;
+    for (let i = 1; i < 3; i++) {
+        ctx.beginPath();
+        ctx.moveTo(zoneX, zoneY + i * (zoneSize / 3));
+        ctx.lineTo(zoneX + zoneSize, zoneY + i * (zoneSize / 3));
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(zoneX + i * (zoneSize / 3), zoneY);
+        ctx.lineTo(zoneX + i * (zoneSize / 3), zoneY + zoneSize);
+        ctx.stroke();
+    }
+
+    // Strike zone border
+    ctx.strokeStyle = '#e74c3c';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(smallX, smallY, smallSize, smallSize);
+
+    // Outer zone border
+    ctx.setLineDash([5, 3]);
+    ctx.strokeStyle = 'rgba(52, 152, 219, 0.8)';
+    ctx.strokeRect(zoneX, zoneY, zoneSize, zoneSize);
+    ctx.setLineDash([]);
+
+    // Draw spots
+    if (spotsArr) {
+        spotsArr.forEach((spot, i) => {
+            ctx.beginPath();
+            ctx.arc(spot.x * (width / 450), spot.y * (height / 580), 5, 0, Math.PI * 2);
+            ctx.fillStyle = '#2ecc71';
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        });
+    }
+    
+    if (badSpotsArr) {
+        badSpotsArr.forEach((spot, i) => {
+            ctx.beginPath();
+            ctx.arc(spot.x * (width / 450), spot.y * (height / 580), 5, 0, Math.PI * 2);
+            ctx.fillStyle = '#e67e22';
+            ctx.fill();
+            ctx.strokeStyle = '#fff';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        });
+    }
+}
+
+// ===== Show History =====
+function showHistory() {
+    loadHistoryList();
+    document.getElementById('historyModal').classList.add('active');
+}
+
+// ===== Close History =====
+function closeHistory() {
+    document.getElementById('historyModal').classList.remove('active');
+}
+
+// ===== Show Preview =====
 function showPreview() {
     const modal = document.getElementById('previewModal');
     const preview = document.getElementById('pdfPreview');
     
-    // 获取数据
-    const pitcherName = document.getElementById('pitcherName').value || '未填写';
-    const trainingName = document.getElementById('trainingName').value || '训练记录';
-    const pitchType = document.getElementById('pitchType').value || '未指定';
+    const pitcherName = document.getElementById('pitcherName').value || 'Unknown';
+    const trainingName = document.getElementById('trainingName').value || 'Training Record';
+    const pitchType = document.getElementById('pitchType').value || 'N/A';
     const trainingDate = document.getElementById('trainingDate').value || new Date().toISOString().split('T')[0];
     
     const goodBalls = parseInt(document.getElementById('goodBalls').value) || 0;
@@ -322,70 +481,43 @@ function showPreview() {
     const totalPitches = goodBalls + badBalls;
     const goodBallRate = totalPitches > 0 ? ((goodBalls / totalPitches) * 100).toFixed(1) : 0;
     
-    // 将 Canvas 转换为图片
     const canvasData = canvas.toDataURL('image/png');
     
-    // 生成预览 HTML（包含九宫格图）
     preview.innerHTML = `
         <div style="font-family: Arial, sans-serif; color: #333;">
-            <h1 style="text-align: center; color: #e74c3c; margin-bottom: 10px;">⚾ 投手训练报告</h1>
+            <h1 style="text-align: center; color: #e74c3c; margin-bottom: 10px;">Pitcher Training Report</h1>
             <h2 style="text-align: center; margin-bottom: 15px;">${trainingName}</h2>
             
             <div style="display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 12px; color: #666;">
-                <span>投手：${pitcherName}</span>
-                <span>日期：${trainingDate}</span>
-                <span>类型：${pitchType}</span>
+                <span>Pitcher: ${pitcherName}</span>
+                <span>Date: ${trainingDate}</span>
+                <span>Type: ${pitchType}</span>
             </div>
             
             <div style="display: flex; gap: 20px;">
-                <!-- 左侧：统计表 -->
                 <div style="flex: 1;">
                     <div style="border: 2px solid #333; padding: 12px;">
-                        <h3 style="margin-bottom: 10px; color: #e74c3c;">📊 投球统计</h3>
+                        <h3 style="margin-bottom: 10px; color: #e74c3c;">Statistics</h3>
                         <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                            <tr style="border-bottom: 1px solid #ddd;">
-                                <td style="padding: 6px;">好球数</td>
-                                <td style="padding: 6px; font-weight: bold; text-align: right;">${goodBalls}</td>
-                            </tr>
-                            <tr style="border-bottom: 1px solid #ddd;">
-                                <td style="padding: 6px;">坏球数</td>
-                                <td style="padding: 6px; font-weight: bold; text-align: right;">${badBalls}</td>
-                            </tr>
-                            <tr style="border-bottom: 1px solid #ddd;">
-                                <td style="padding: 6px;">总投球数</td>
-                                <td style="padding: 6px; font-weight: bold; text-align: right;">${totalPitches}</td>
-                            </tr>
-                            <tr style="border-bottom: 1px solid #ddd;">
-                                <td style="padding: 6px;">好球率</td>
-                                <td style="padding: 6px; font-weight: bold; text-align: right; color: #27ae60;">${goodBallRate}%</td>
-                            </tr>
-                            <tr style="border-bottom: 1px solid #ddd;">
-                                <td style="padding: 6px;">三振次数</td>
-                                <td style="padding: 6px; font-weight: bold; text-align: right;">${strikeouts}</td>
-                            </tr>
-                            <tr style="border-bottom: 1px solid #ddd;">
-                                <td style="padding: 6px;">安打数</td>
-                                <td style="padding: 6px; font-weight: bold; text-align: right;">${hits}</td>
-                            </tr>
-                            <tr>
-                                <td style="padding: 6px;">失分数</td>
-                                <td style="padding: 6px; font-weight: bold; text-align: right; color: #e74c3c;">${runs}</td>
-                            </tr>
+                            <tr><td style="padding: 6px;">Strikes</td><td style="padding: 6px; font-weight: bold; text-align: right;">${goodBalls}</td></tr>
+                            <tr><td style="padding: 6px;">Balls</td><td style="padding: 6px; font-weight: bold; text-align: right;">${badBalls}</td></tr>
+                            <tr><td style="padding: 6px;">Total Pitches</td><td style="padding: 6px; font-weight: bold; text-align: right;">${totalPitches}</td></tr>
+                            <tr><td style="padding: 6px;">Strike Rate</td><td style="padding: 6px; font-weight: bold; text-align: right; color: #27ae60;">${goodBallRate}%</td></tr>
+                            <tr><td style="padding: 6px;">Strikeouts</td><td style="padding: 6px; font-weight: bold; text-align: right;">${strikeouts}</td></tr>
+                            <tr><td style="padding: 6px;">Hits</td><td style="padding: 6px; font-weight: bold; text-align: right;">${hits}</td></tr>
+                            <tr><td style="padding: 6px; color: #e74c3c;">Runs</td><td style="padding: 6px; font-weight: bold; text-align: right; color: #e74c3c;">${runs}</td></tr>
                         </table>
                     </div>
-                    
                     <div style="margin-top: 15px; text-align: center; color: #666; font-size: 12px;">
-                        <span style="color: #27ae60;">●</span> 好球：${spots.length}个
-                        <span style="color: #e67e22; margin-left: 10px;">●</span> 坏球：${badSpots.length}个
+                        <span style="color: #27ae60;">●</span> Strikes: ${spots.length}
+                        <span style="color: #e67e22; margin-left: 10px;">●</span> Balls: ${badSpots.length}
                     </div>
                 </div>
-                
-                <!-- 右侧：九宫格图 -->
                 <div style="flex: 0 0 200px;">
-                    <h3 style="margin-bottom: 8px; color: #e74c3c; text-align: center;">🎯 进垒区分布</h3>
+                    <h3 style="margin-bottom: 8px; color: #e74c3c; text-align: center;">Strike Zone</h3>
                     <img src="${canvasData}" style="width: 100%; border: 1px solid #ddd; border-radius: 8px;" />
                     <div style="font-size: 10px; color: #999; text-align: center; margin-top: 5px;">
-                        红框=好球区(2/3) | 虚线=大参考区
+                        Red = Strike Zone | Blue = Ball Area
                     </div>
                 </div>
             </div>
@@ -395,21 +527,19 @@ function showPreview() {
     modal.classList.add('active');
 }
 
-// ===== 关闭预览 =====
+// ===== Close Preview =====
 function closePreview() {
     document.getElementById('previewModal').classList.remove('active');
 }
 
-// ===== 导出 PDF =====
+// ===== Export PDF =====
 async function exportToPDF() {
-    // 创建临时容器用于截图
     const container = document.createElement('div');
-    container.style.cssText = 'position: absolute; left: -9999px; top: 0; width: 800px; background: #fff; padding: 20px; font-family: "Microsoft YaHei", "Heiti SC", Arial, sans-serif;';
+    container.style.cssText = 'position: absolute; left: -9999px; top: 0; width: 800px; background: #fff; padding: 20px; font-family: Arial, sans-serif;';
     
-    // 获取数据
-    const pitcherName = document.getElementById('pitcherName').value || '未填写';
-    const trainingName = document.getElementById('trainingName').value || '训练记录';
-    const pitchType = document.getElementById('pitchType').value || '未指定';
+    const pitcherName = document.getElementById('pitcherName').value || 'Unknown';
+    const trainingName = document.getElementById('trainingName').value || 'Training Record';
+    const pitchType = document.getElementById('pitchType').value || 'N/A';
     const trainingDate = document.getElementById('trainingDate').value || new Date().toISOString().split('T')[0];
     
     const goodBalls = parseInt(document.getElementById('goodBalls').value) || 0;
@@ -421,49 +551,47 @@ async function exportToPDF() {
     const goodBallRate = totalPitches > 0 ? ((goodBalls / totalPitches) * 100).toFixed(1) : 0;
     const canvasData = canvas.toDataURL('image/png');
     
-    // HTML 内容
     container.innerHTML = `
         <div style="text-align: center; margin-bottom: 20px;">
-            <h1 style="color: #e74c3c; margin: 0;">投手训练报告</h1>
+            <h1 style="color: #e74c3c; margin: 0;">Pitcher Training Report</h1>
             <h2 style="margin: 10px 0;">${trainingName}</h2>
             <div style="color: #666; font-size: 12px;">
-                投手：${pitcherName} | 日期：${trainingDate} | 类型：${pitchType}
+                Pitcher: ${pitcherName} | Date: ${trainingDate} | Type: ${pitchType}
             </div>
         </div>
         <div style="display: flex; gap: 20px;">
             <div style="flex: 1; border: 2px solid #333; padding: 15px;">
-                <h3 style="color: #e74c3c; border-bottom: 2px solid #e74c3c; padding-bottom: 10px;">投球统计</h3>
+                <h3 style="color: #e74c3c; border-bottom: 2px solid #e74c3c; padding-bottom: 10px;">Statistics</h3>
                 <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-                    <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;">好球数</td><td style="padding: 8px; text-align: right; font-weight: bold;">${goodBalls}</td></tr>
-                    <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;">坏球数</td><td style="padding: 8px; text-align: right; font-weight: bold;">${badBalls}</td></tr>
-                    <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;">总投球数</td><td style="padding: 8px; text-align: right; font-weight: bold;">${totalPitches}</td></tr>
-                    <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;">好球率</td><td style="padding: 8px; text-align: right; font-weight: bold; color: #27ae60;">${goodBallRate}%</td></tr>
-                    <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;">三振次数</td><td style="padding: 8px; text-align: right; font-weight: bold;">${strikeouts}</td></tr>
-                    <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;">安打数</td><td style="padding: 8px; text-align: right; font-weight: bold;">${hits}</td></tr>
-                    <tr><td style="padding: 8px; color: #e74c3c;">失分数</td><td style="padding: 8px; text-align: right; font-weight: bold; color: #e74c3c;">${runs}</td></tr>
+                    <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;">Strikes</td><td style="padding: 8px; text-align: right; font-weight: bold;">${goodBalls}</td></tr>
+                    <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;">Balls</td><td style="padding: 8px; text-align: right; font-weight: bold;">${badBalls}</td></tr>
+                    <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;">Total Pitches</td><td style="padding: 8px; text-align: right; font-weight: bold;">${totalPitches}</td></tr>
+                    <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;">Strike Rate</td><td style="padding: 8px; text-align: right; font-weight: bold; color: #27ae60;">${goodBallRate}%</td></tr>
+                    <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;">Strikeouts</td><td style="padding: 8px; text-align: right; font-weight: bold;">${strikeouts}</td></tr>
+                    <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;">Hits</td><td style="padding: 8px; text-align: right; font-weight: bold;">${hits}</td></tr>
+                    <tr><td style="padding: 8px; color: #e74c3c;">Runs</td><td style="padding: 8px; text-align: right; font-weight: bold; color: #e74c3c;">${runs}</td></tr>
                 </table>
                 <div style="margin-top: 15px; font-size: 12px; color: #666;">
-                    <span style="color: #27ae60;">●</span> 好球标记: ${spots.length}个
-                    <span style="color: #e67e22; margin-left: 10px;">●</span> 坏球标记: ${badSpots.length}个
+                    <span style="color: #27ae60;">●</span> Strikes marked: ${spots.length}
+                    <span style="color: #e67e22; margin-left: 10px;">●</span> Balls marked: ${badSpots.length}
                 </div>
             </div>
             <div style="flex: 0 0 280px;">
-                <h3 style="color: #e74c3c; text-align: center;">进垒区分布图</h3>
+                <h3 style="color: #e74c3c; text-align: center;">Strike Zone</h3>
                 <img src="${canvasData}" style="width: 100%; border: 1px solid #ddd; border-radius: 8px;" />
                 <div style="font-size: 10px; color: #999; text-align: center; margin-top: 5px;">
-                    红框=好球区(2/3) | 虚线=大参考区
+                    Red = Strike Zone | Blue = Ball Area
                 </div>
             </div>
         </div>
         <div style="text-align: center; margin-top: 20px; color: #999; font-size: 10px;">
-            Generated by 投手训练记录系统
+            Generated by Pitcher Training Tracker
         </div>
     `;
     
     document.body.appendChild(container);
     
     try {
-        // 使用 html2canvas 截图
         const imgData = await html2canvas(container, {
             scale: 2,
             useCORS: true,
@@ -471,14 +599,13 @@ async function exportToPDF() {
             backgroundColor: '#ffffff'
         }).then(c => c.toDataURL('image/png'));
         
-        // 计算 PDF 尺寸
         const imgWidth = 190;
         const imgHeight = (imgData.height / imgData.width) * imgWidth;
         
         const { jsPDF } = window.jspdf;
         const doc = new jsPDF('p', 'mm', 'a4');
         doc.addImage(imgData, 'PNG', 10, 20, imgWidth, imgHeight);
-        doc.save(`训练报告_${trainingName}_${trainingDate}.pdf`);
+        doc.save(`Training_Report_${trainingName}_${trainingDate}.pdf`);
         
     } finally {
         document.body.removeChild(container);

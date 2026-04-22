@@ -325,15 +325,23 @@ function loadHistoryList() {
         return;
     }
     
-    listContainer.innerHTML = history.slice(0, 10).map(record => `
+    // Only show latest 5 records
+    const displayRecords = history.slice(0, 5);
+    
+    listContainer.innerHTML = displayRecords.map(record => `
         <div class="history-item" onclick="viewHistoryRecord(${record.id})">
             <div class="history-date">${record.trainingDate}</div>
             <div class="history-name">${record.trainingName}</div>
             <div class="history-stats">
-                Strikes: ${record.goodBalls} | Balls: ${record.badBalls} | K: ${record.strikeouts} | BB: ${record.walks || 0}
+                S: ${record.goodBalls} | B: ${record.badBalls} | K: ${record.strikeouts} | BB: ${record.walks || 0} | H: ${record.hits || 0}
             </div>
         </div>
     `).join('');
+    
+    // Show "more" indicator if there are more records
+    if (history.length > 5) {
+        listContainer.innerHTML += `<p style="color: #666; text-align: center; padding: 10px; font-size: 12px;">+ ${history.length - 5} more records (click to view details)</p>`;
+    }
 }
 
 // ===== Toggle History =====

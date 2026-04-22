@@ -215,6 +215,7 @@ function setupEventListeners() {
             document.getElementById('goodBalls').value = 0;
             document.getElementById('badBalls').value = 0;
             document.getElementById('strikeouts').value = 0;
+            document.getElementById('walks').value = 0;
             document.getElementById('hits').value = 0;
             document.getElementById('runs').value = 0;
             document.getElementById('pitcherName').value = '';
@@ -236,7 +237,7 @@ function setupEventListeners() {
     });
 
     // History buttons
-    document.getElementById('showHistory').addEventListener('click', showHistory);
+    document.getElementById('toggleHistory').addEventListener('click', toggleHistory);
     document.getElementById('closeHistory').addEventListener('click', closeHistory);
     document.getElementById('historyModal').addEventListener('click', (e) => {
         if (e.target.id === 'historyModal') closeHistory();
@@ -251,6 +252,7 @@ function updateStats() {
     const goodBalls = parseInt(document.getElementById('goodBalls').value) || 0;
     const badBalls = parseInt(document.getElementById('badBalls').value) || 0;
     const strikeouts = parseInt(document.getElementById('strikeouts').value) || 0;
+    const walks = parseInt(document.getElementById('walks').value) || 0;
     const hits = parseInt(document.getElementById('hits').value) || 0;
     const runs = parseInt(document.getElementById('runs').value) || 0;
     
@@ -260,6 +262,7 @@ function updateStats() {
     document.getElementById('totalPitches').textContent = totalPitches;
     document.getElementById('goodBallRate').textContent = goodBallRate + '%';
     document.getElementById('statStrikeouts').textContent = strikeouts;
+    document.getElementById('statWalks').textContent = walks;
     document.getElementById('statHits').textContent = hits;
     document.getElementById('statRuns').textContent = runs;
     document.getElementById('markedPitches').textContent = `${spots.length}S / ${badSpots.length}B`;
@@ -274,6 +277,7 @@ function saveTraining() {
     const goodBalls = parseInt(document.getElementById('goodBalls').value) || 0;
     const badBalls = parseInt(document.getElementById('badBalls').value) || 0;
     const strikeouts = parseInt(document.getElementById('strikeouts').value) || 0;
+    const walks = parseInt(document.getElementById('walks').value) || 0;
     const hits = parseInt(document.getElementById('hits').value) || 0;
     const runs = parseInt(document.getElementById('runs').value) || 0;
 
@@ -286,6 +290,7 @@ function saveTraining() {
         goodBalls,
         badBalls,
         strikeouts,
+        walks,
         hits,
         runs,
         spots: [...spots],
@@ -311,6 +316,9 @@ function saveTraining() {
 function loadHistoryList() {
     const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     const listContainer = document.getElementById('historyList');
+    const recordCount = document.getElementById('recordCount');
+    
+    recordCount.textContent = history.length;
     
     if (history.length === 0) {
         listContainer.innerHTML = '<p style="color: #999; text-align: center; padding: 10px;">No records yet</p>';
@@ -322,10 +330,24 @@ function loadHistoryList() {
             <div class="history-date">${record.trainingDate}</div>
             <div class="history-name">${record.trainingName}</div>
             <div class="history-stats">
-                Strikes: ${record.goodBalls} | Balls: ${record.badBalls} | K: ${record.strikeouts}
+                Strikes: ${record.goodBalls} | Balls: ${record.badBalls} | K: ${record.strikeouts} | BB: ${record.walks || 0}
             </div>
         </div>
     `).join('');
+}
+
+// ===== Toggle History =====
+function toggleHistory() {
+    const historyList = document.getElementById('historyList');
+    const toggleBtn = document.getElementById('toggleHistory');
+    
+    if (historyList.style.display === 'none') {
+        historyList.style.display = 'block';
+        toggleBtn.innerHTML = 'Hide History (<span id="recordCount">' + (JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').length) + '</span>)';
+    } else {
+        historyList.style.display = 'none';
+        toggleBtn.innerHTML = 'Show History (<span id="recordCount">' + (JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').length) + '</span>)';
+    }
 }
 
 // ===== View History Record =====
@@ -355,6 +377,7 @@ function viewHistoryRecord(id) {
                     <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;">Total Pitches</td><td style="padding: 8px; text-align: right; font-weight: bold;">${totalPitches}</td></tr>
                     <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;">Strike Rate</td><td style="padding: 8px; text-align: right; font-weight: bold; color: #27ae60;">${strikeRate}%</td></tr>
                     <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;">Strikeouts</td><td style="padding: 8px; text-align: right; font-weight: bold;">${record.strikeouts}</td></tr>
+                    <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;">Walks</td><td style="padding: 8px; text-align: right; font-weight: bold;">${record.walks || 0}</td></tr>
                     <tr><td style="padding: 8px; border-bottom: 1px solid #ddd;">Hits</td><td style="padding: 8px; text-align: right; font-weight: bold;">${record.hits}</td></tr>
                     <tr><td style="padding: 8px; color: #e74c3c;">Runs</td><td style="padding: 8px; text-align: right; font-weight: bold; color: #e74c3c;">${record.runs}</td></tr>
                 </table>
@@ -476,6 +499,7 @@ function showPreview() {
     const goodBalls = parseInt(document.getElementById('goodBalls').value) || 0;
     const badBalls = parseInt(document.getElementById('badBalls').value) || 0;
     const strikeouts = parseInt(document.getElementById('strikeouts').value) || 0;
+    const walks = parseInt(document.getElementById('walks').value) || 0;
     const hits = parseInt(document.getElementById('hits').value) || 0;
     const runs = parseInt(document.getElementById('runs').value) || 0;
     const totalPitches = goodBalls + badBalls;
@@ -504,6 +528,7 @@ function showPreview() {
                             <tr><td style="padding: 6px;">Total Pitches</td><td style="padding: 6px; font-weight: bold; text-align: right;">${totalPitches}</td></tr>
                             <tr><td style="padding: 6px;">Strike Rate</td><td style="padding: 6px; font-weight: bold; text-align: right; color: #27ae60;">${goodBallRate}%</td></tr>
                             <tr><td style="padding: 6px;">Strikeouts</td><td style="padding: 6px; font-weight: bold; text-align: right;">${strikeouts}</td></tr>
+                            <tr><td style="padding: 6px;">Walks</td><td style="padding: 6px; font-weight: bold; text-align: right;">${walks}</td></tr>
                             <tr><td style="padding: 6px;">Hits</td><td style="padding: 6px; font-weight: bold; text-align: right;">${hits}</td></tr>
                             <tr><td style="padding: 6px; color: #e74c3c;">Runs</td><td style="padding: 6px; font-weight: bold; text-align: right; color: #e74c3c;">${runs}</td></tr>
                         </table>
@@ -549,6 +574,7 @@ function exportToPDF() {
         const goodBalls = parseInt(document.getElementById('goodBalls').value) || 0;
         const badBalls = parseInt(document.getElementById('badBalls').value) || 0;
         const strikeouts = parseInt(document.getElementById('strikeouts').value) || 0;
+        const walks = parseInt(document.getElementById('walks').value) || 0;
         const hits = parseInt(document.getElementById('hits').value) || 0;
         const runs = parseInt(document.getElementById('runs').value) || 0;
         const totalPitches = goodBalls + badBalls;
@@ -595,6 +621,7 @@ function exportToPDF() {
             ['Total Pitches', totalPitches],
             ['Strike Rate', goodBallRate + '%'],
             ['Strikeouts', strikeouts],
+            ['Walks', walks],
             ['Hits', hits],
             ['Runs', runs]
         ];

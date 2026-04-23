@@ -32,12 +32,12 @@ function drawStrikeZone() {
     largeZoneSize = Math.min(canvas.width, canvas.height) * 0.9;
     largeZoneX = (canvas.width - largeZoneSize) / 2;
     largeZoneY = (canvas.height - largeZoneSize) / 2;
-    
+
     strikeZoneWidth = largeZoneSize * (2 / 3);
     strikeZoneHeight = largeZoneSize * (2 / 3);
     strikeZoneX = (canvas.width - strikeZoneWidth) / 2;
     strikeZoneY = (canvas.height - strikeZoneHeight) / 2;
-    
+
     const smallZoneX = strikeZoneX;
     const smallZoneY = strikeZoneY;
     const smallZoneSize = strikeZoneWidth;
@@ -51,14 +51,14 @@ function drawStrikeZone() {
     // Outer zone grid lines
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
     ctx.lineWidth = 1;
-    
+
     for (let i = 1; i < 3; i++) {
         ctx.beginPath();
         ctx.moveTo(largeZoneX, largeZoneY + i * (largeZoneSize / 3));
         ctx.lineTo(largeZoneX + largeZoneSize, largeZoneY + i * (largeZoneSize / 3));
         ctx.stroke();
     }
-    
+
     for (let i = 1; i < 3; i++) {
         ctx.beginPath();
         ctx.moveTo(largeZoneX + i * (largeZoneSize / 3), largeZoneY);
@@ -73,14 +73,14 @@ function drawStrikeZone() {
     // Strike zone grid lines
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
     ctx.lineWidth = 1;
-    
+
     for (let i = 1; i < 3; i++) {
         ctx.beginPath();
         ctx.moveTo(smallZoneX, smallZoneY + i * smallCellH);
         ctx.lineTo(smallZoneX + smallZoneSize, smallZoneY + i * smallCellH);
         ctx.stroke();
     }
-    
+
     for (let i = 1; i < 3; i++) {
         ctx.beginPath();
         ctx.moveTo(smallZoneX + i * smallCellW, smallZoneY);
@@ -126,12 +126,12 @@ function drawStrikeZone() {
     ctx.fillText('BALL (Low)', canvas.width / 2, largeZoneY + largeZoneSize + 15);
     ctx.fillText('OUT', largeZoneX - 12, canvas.height / 2);
     ctx.fillText('OUT', largeZoneX + largeZoneSize + 12, canvas.height / 2);
-    
+
     // Draw saved spots
     spots.forEach((spot, index) => {
         drawSpot(spot.x, spot.y, '#2ecc71', index + 1);
     });
-    
+
     badSpots.forEach((spot, index) => {
         drawSpot(spot.x, spot.y, '#e67e22', spots.length + index + 1);
     });
@@ -143,11 +143,11 @@ function drawSpot(x, y, color = '#ff69b4', number = 1) {
     ctx.arc(x, y, 8, 0, Math.PI * 2);
     ctx.fillStyle = color;
     ctx.fill();
-    
+
     ctx.strokeStyle = '#fff';
     ctx.lineWidth = 2;
     ctx.stroke();
-    
+
     ctx.fillStyle = '#fff';
     ctx.font = 'bold 11px Arial';
     ctx.textAlign = 'center';
@@ -159,30 +159,28 @@ canvas.addEventListener('click', (e) => {
     const rect = canvas.getBoundingClientRect();
     const scaleX = canvas.width / rect.width;
     const scaleY = canvas.height / rect.height;
-    
+
     const x = (e.clientX - rect.left) * scaleX;
     const y = (e.clientY - rect.top) * scaleY;
-    
+
     const isInLargeZone = x >= largeZoneX && x <= largeZoneX + largeZoneSize &&
                           y >= largeZoneY && y <= largeZoneY + largeZoneSize;
-    
+
     if (!isInLargeZone) return;
-    
+
     const isInStrikeZone = x >= strikeZoneX && x <= strikeZoneX + strikeZoneWidth &&
                            y >= strikeZoneY && y <= strikeZoneY + strikeZoneHeight;
-    
+
     if (isInStrikeZone) {
         spots.push({ x, y });
-        // Auto increment strikes counter
+        // Auto increment goodBalls counter
         const strikesInput = document.getElementById('goodBalls');
         strikesInput.value = parseInt(strikesInput.value || 0) + 1;
     } else {
+        // Ball zone: NO auto-increment, keep manual only
         badSpots.push({ x, y });
-        // Click outside strike zone but inside large zone = ball
-        const ballsInput = document.getElementById('badBalls');
-        ballsInput.value = parseInt(ballsInput.value || 0) + 1;
     }
-    
+
     drawStrikeZone();
     updateStats();
 });
@@ -196,7 +194,7 @@ function setupEventListeners() {
             updateStats();
         });
     });
-    
+
     document.querySelectorAll('.btn-minus').forEach(btn => {
         btn.addEventListener('click', () => {
             const target = document.getElementById(btn.dataset.target);
@@ -204,22 +202,24 @@ function setupEventListeners() {
             updateStats();
         });
     });
-    
-    ['goodBalls', 'badBalls', 'strikeouts', 'walks', 'hits', 'runs'].forEach(id => {
-        document.getElementById(id).addEventListener('input', updateStats);
+
+    ['goodBalls', 'badBalls', 'strikeouts', 'walks', 'hits', 'runs', 'totalPitches'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.addEventListener('input', updateStats);
     });
-    
+
     document.getElementById('clearSpots').addEventListener('click', () => {
         spots = [];
         badSpots = [];
         drawStrikeZone();
         updateStats();
     });
-    
+
     document.getElementById('resetAll').addEventListener('click', () => {
         if (confirm('Reset all data?')) {
             document.getElementById('goodBalls').value = 0;
             document.getElementById('badBalls').value = 0;
+            document.getElementById('totalPitches').value = 0;
             document.getElementById('strikeouts').value = 0;
             document.getElementById('walks').value = 0;
             document.getElementById('hits').value = 0;
@@ -227,14 +227,14 @@ function setupEventListeners() {
             document.getElementById('pitcherName').value = '';
             document.getElementById('trainingName').value = '';
             document.getElementById('pitchType').value = '';
-            
+
             spots = [];
             badSpots = [];
             drawStrikeZone();
             updateStats();
         }
     });
-    
+
     document.getElementById('exportPDF').addEventListener('click', showPreview);
     document.getElementById('cancelPreview').addEventListener('click', closePreview);
     document.getElementById('downloadPDF').addEventListener('click', exportToPDF);
@@ -257,15 +257,15 @@ function setupEventListeners() {
 function updateStats() {
     const goodBalls = parseInt(document.getElementById('goodBalls').value) || 0;
     const badBalls = parseInt(document.getElementById('badBalls').value) || 0;
+    const totalPitches = parseInt(document.getElementById('totalPitches').value) || 0;
     const strikeouts = parseInt(document.getElementById('strikeouts').value) || 0;
     const walks = parseInt(document.getElementById('walks').value) || 0;
     const hits = parseInt(document.getElementById('hits').value) || 0;
     const runs = parseInt(document.getElementById('runs').value) || 0;
-    
-    const totalPitches = goodBalls + badBalls;
+
     const goodBallRate = totalPitches > 0 ? ((goodBalls / totalPitches) * 100).toFixed(1) : 0;
-    
-    document.getElementById('totalPitches').textContent = totalPitches;
+
+    document.getElementById('totalPitches').value = totalPitches;
     document.getElementById('goodBallRate').textContent = goodBallRate + '%';
     document.getElementById('statStrikeouts').textContent = strikeouts;
     document.getElementById('statWalks').textContent = walks;
@@ -282,6 +282,7 @@ function saveTraining() {
     const pitchType = document.getElementById('pitchType').value || 'N/A';
     const goodBalls = parseInt(document.getElementById('goodBalls').value) || 0;
     const badBalls = parseInt(document.getElementById('badBalls').value) || 0;
+    const totalPitches = parseInt(document.getElementById('totalPitches').value) || 0;
     const strikeouts = parseInt(document.getElementById('strikeouts').value) || 0;
     const walks = parseInt(document.getElementById('walks').value) || 0;
     const hits = parseInt(document.getElementById('hits').value) || 0;
@@ -295,6 +296,7 @@ function saveTraining() {
         pitchType,
         goodBalls,
         badBalls,
+        totalPitches,
         strikeouts,
         walks,
         hits,
@@ -303,18 +305,10 @@ function saveTraining() {
         badSpots: [...badSpots]
     };
 
-    // Get existing history
     let history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-    
-    // Add new record
     history.unshift(record);
-    
-    // Save to localStorage
     localStorage.setItem(STORAGE_KEY, JSON.stringify(history));
-    
-    // Update history list
     loadHistoryList();
-    
     alert('Training saved successfully!');
 }
 
@@ -323,17 +317,16 @@ function loadHistoryList() {
     const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     const listContainer = document.getElementById('historyList');
     const recordCount = document.getElementById('recordCount');
-    
+
     recordCount.textContent = history.length;
-    
+
     if (history.length === 0) {
         listContainer.innerHTML = '<p style="color: #999; text-align: center; padding: 10px;">No records yet</p>';
         return;
     }
-    
-    // Only show latest 3 records
+
     const displayRecords = history.slice(0, 3);
-    
+
     listContainer.innerHTML = displayRecords.map(record => `
         <div class="history-item" onclick="viewHistoryRecord(${record.id})">
             <div class="history-date">${record.trainingDate}</div>
@@ -343,8 +336,7 @@ function loadHistoryList() {
             </div>
         </div>
     `).join('');
-    
-    // Show "more" indicator if there are more records
+
     if (history.length > 3) {
         listContainer.innerHTML += `<p style="color: #666; text-align: center; padding: 10px; font-size: 12px;">+ ${history.length - 3} more records (click to view details)</p>`;
     }
@@ -354,7 +346,7 @@ function loadHistoryList() {
 function toggleHistory() {
     const historyList = document.getElementById('historyList');
     const toggleBtn = document.getElementById('toggleHistory');
-    
+
     if (historyList.style.display === 'none') {
         historyList.style.display = 'block';
         toggleBtn.innerHTML = 'Hide History (<span id="recordCount">' + (JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').length) + '</span>)';
@@ -368,16 +360,15 @@ function toggleHistory() {
 function viewHistoryRecord(id) {
     const history = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
     const record = history.find(r => r.id === id);
-    
+
     if (!record) return;
-    
+
     const detailContainer = document.getElementById('historyDetail');
-    const totalPitches = record.goodBalls + record.badBalls;
+    const totalPitches = record.totalPitches || (record.goodBalls + record.badBalls);
     const strikeRate = totalPitches > 0 ? ((record.goodBalls / totalPitches) * 100).toFixed(1) : 0;
-    
-    // Create mini canvas for spot visualization
+
     const miniCanvasId = 'miniCanvas_' + id;
-    
+
     detailContainer.innerHTML = `
         <div style="display: flex; gap: 20px;">
             <div style="flex: 1;">
@@ -396,8 +387,8 @@ function viewHistoryRecord(id) {
                     <tr><td style="padding: 8px; color: #e74c3c;">Runs</td><td style="padding: 8px; text-align: right; font-weight: bold; color: #e74c3c;">${record.runs}</td></tr>
                 </table>
                 <div style="margin-top: 15px; font-size: 12px; color: #666;">
-                    <span style="color: #27ae60;">●</span> Strikes marked: ${record.spots ? record.spots.length : 0}
-                    <span style="color: #e67e22; margin-left: 10px;">●</span> Balls marked: ${record.badSpots ? record.badSpots.length : 0}
+                    <span style="color: #27ae60;">&#9679;</span> Strikes marked: ${record.spots ? record.spots.length : 0}
+                    <span style="color: #e67e22; margin-left: 10px;">&#9679;</span> Balls marked: ${record.badSpots ? record.badSpots.length : 0}
                 </div>
             </div>
             <div style="flex: 0 0 250px;">
@@ -406,8 +397,7 @@ function viewHistoryRecord(id) {
             </div>
         </div>
     `;
-    
-    // Draw mini strike zone
+
     setTimeout(() => {
         const miniCanvas = document.getElementById(miniCanvasId);
         if (miniCanvas) {
@@ -415,7 +405,7 @@ function viewHistoryRecord(id) {
             drawMiniStrikeZone(miniCtx, miniCanvas.width, miniCanvas.height, record.spots, record.badSpots);
         }
     }, 100);
-    
+
     document.getElementById('historyModal').classList.add('active');
 }
 
@@ -431,14 +421,12 @@ function drawMiniStrikeZone(ctx, width, height, spotsArr, badSpotsArr) {
     const smallX = (width - smallSize) / 2;
     const smallY = (height - smallSize) / 2;
 
-    // Draw zones
     ctx.fillStyle = 'rgba(255, 255, 255, 0.08)';
     ctx.fillRect(zoneX, zoneY, zoneSize, zoneSize);
-    
+
     ctx.fillStyle = 'rgba(46, 204, 113, 0.15)';
     ctx.fillRect(smallX, smallY, smallSize, smallSize);
 
-    // Grid lines
     ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
     ctx.lineWidth = 0.5;
     for (let i = 1; i < 3; i++) {
@@ -452,20 +440,17 @@ function drawMiniStrikeZone(ctx, width, height, spotsArr, badSpotsArr) {
         ctx.stroke();
     }
 
-    // Strike zone border
     ctx.strokeStyle = '#e74c3c';
     ctx.lineWidth = 2;
     ctx.strokeRect(smallX, smallY, smallSize, smallSize);
 
-    // Outer zone border
     ctx.setLineDash([5, 3]);
     ctx.strokeStyle = 'rgba(52, 152, 219, 0.8)';
     ctx.strokeRect(zoneX, zoneY, zoneSize, zoneSize);
     ctx.setLineDash([]);
 
-    // Draw spots
     if (spotsArr) {
-        spotsArr.forEach((spot, i) => {
+        spotsArr.forEach((spot) => {
             ctx.beginPath();
             ctx.arc(spot.x * (width / 450), spot.y * (height / 580), 5, 0, Math.PI * 2);
             ctx.fillStyle = '#2ecc71';
@@ -475,9 +460,9 @@ function drawMiniStrikeZone(ctx, width, height, spotsArr, badSpotsArr) {
             ctx.stroke();
         });
     }
-    
+
     if (badSpotsArr) {
-        badSpotsArr.forEach((spot, i) => {
+        badSpotsArr.forEach((spot) => {
             ctx.beginPath();
             ctx.arc(spot.x * (width / 450), spot.y * (height / 580), 5, 0, Math.PI * 2);
             ctx.fillStyle = '#e67e22';
@@ -504,34 +489,34 @@ function closeHistory() {
 function showPreview() {
     const modal = document.getElementById('previewModal');
     const preview = document.getElementById('pdfPreview');
-    
+
     const pitcherName = document.getElementById('pitcherName').value || 'Unknown';
     const trainingName = document.getElementById('trainingName').value || 'Training Record';
     const pitchType = document.getElementById('pitchType').value || 'N/A';
     const trainingDate = document.getElementById('trainingDate').value || new Date().toISOString().split('T')[0];
-    
+
     const goodBalls = parseInt(document.getElementById('goodBalls').value) || 0;
     const badBalls = parseInt(document.getElementById('badBalls').value) || 0;
+    const totalPitches = parseInt(document.getElementById('totalPitches').value) || 0;
     const strikeouts = parseInt(document.getElementById('strikeouts').value) || 0;
     const walks = parseInt(document.getElementById('walks').value) || 0;
     const hits = parseInt(document.getElementById('hits').value) || 0;
     const runs = parseInt(document.getElementById('runs').value) || 0;
-    const totalPitches = goodBalls + badBalls;
     const goodBallRate = totalPitches > 0 ? ((goodBalls / totalPitches) * 100).toFixed(1) : 0;
-    
+
     const canvasData = canvas.toDataURL('image/png');
-    
+
     preview.innerHTML = `
         <div style="font-family: Arial, sans-serif; color: #333;">
             <h1 style="text-align: center; color: #e74c3c; margin-bottom: 10px;">Pitcher Training Report</h1>
             <h2 style="text-align: center; margin-bottom: 15px;">${trainingName}</h2>
-            
+
             <div style="display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 12px; color: #666;">
                 <span>Pitcher: ${pitcherName}</span>
                 <span>Date: ${trainingDate}</span>
                 <span>Type: ${pitchType}</span>
             </div>
-            
+
             <div style="display: flex; gap: 20px;">
                 <div style="flex: 1;">
                     <div style="border: 2px solid #333; padding: 12px;">
@@ -548,8 +533,8 @@ function showPreview() {
                         </table>
                     </div>
                     <div style="margin-top: 15px; text-align: center; color: #666; font-size: 12px;">
-                        <span style="color: #27ae60;">●</span> Strikes: ${spots.length}
-                        <span style="color: #e67e22; margin-left: 10px;">●</span> Balls: ${badSpots.length}
+                        <span style="color: #27ae60;">&#9679;</span> Strikes: ${spots.length}
+                        <span style="color: #e67e22; margin-left: 10px;">&#9679;</span> Balls: ${badSpots.length}
                     </div>
                 </div>
                 <div style="flex: 0 0 200px;">
@@ -562,7 +547,7 @@ function showPreview() {
             </div>
         </div>
     `;
-    
+
     modal.classList.add('active');
 }
 
@@ -579,56 +564,52 @@ function exportToPDF() {
         const pageWidth = doc.internal.pageSize.getWidth();
         const margin = 15;
         let y = margin;
-        
+
         const pitcherName = document.getElementById('pitcherName').value || 'Unknown';
         const trainingName = document.getElementById('trainingName').value || 'Training Record';
         const pitchType = document.getElementById('pitchType').value || 'N/A';
         const trainingDate = document.getElementById('trainingDate').value || new Date().toISOString().split('T')[0];
-        
+
         const goodBalls = parseInt(document.getElementById('goodBalls').value) || 0;
         const badBalls = parseInt(document.getElementById('badBalls').value) || 0;
+        const totalPitches = parseInt(document.getElementById('totalPitches').value) || 0;
         const strikeouts = parseInt(document.getElementById('strikeouts').value) || 0;
         const walks = parseInt(document.getElementById('walks').value) || 0;
         const hits = parseInt(document.getElementById('hits').value) || 0;
         const runs = parseInt(document.getElementById('runs').value) || 0;
-        const totalPitches = goodBalls + badBalls;
         const goodBallRate = totalPitches > 0 ? ((goodBalls / totalPitches) * 100).toFixed(1) : 0;
-        
+
         // Title
         doc.setFontSize(20);
         doc.setTextColor(231, 76, 60);
         doc.text('Pitcher Training Report', pageWidth / 2, y, { align: 'center' });
         y += 10;
-        
-        // Training Name
+
         doc.setFontSize(14);
         doc.setTextColor(0, 0, 0);
         doc.text(trainingName, pageWidth / 2, y, { align: 'center' });
         y += 7;
-        
-        // Info
+
         doc.setFontSize(9);
         doc.setTextColor(100, 100, 100);
         doc.text(`Pitcher: ${pitcherName} | Date: ${trainingDate} | Type: ${pitchType}`, pageWidth / 2, y, { align: 'center' });
         y += 10;
-        
-        // Divider
+
         doc.setDrawColor(231, 76, 60);
         doc.line(margin, y, pageWidth - margin, y);
         y += 8;
-        
-        // Left: Stats table
+
         const statsX = margin;
         const statsW = 80;
-        
+
         doc.setFontSize(12);
         doc.setTextColor(52, 152, 219);
         doc.text('Statistics', statsX, y);
         y += 6;
-        
+
         doc.setFontSize(10);
         doc.setTextColor(0, 0, 0);
-        
+
         const stats = [
             ['Strikes', goodBalls],
             ['Balls', badBalls],
@@ -639,7 +620,7 @@ function exportToPDF() {
             ['Hits', hits],
             ['Runs', runs]
         ];
-        
+
         stats.forEach((s, i) => {
             if (i % 2 === 0) {
                 doc.setFillColor(248, 248, 248);
@@ -652,8 +633,7 @@ function exportToPDF() {
             doc.setTextColor(0, 0, 0);
             y += 6;
         });
-        
-        // Markers info
+
         y += 3;
         doc.setFontSize(9);
         doc.setTextColor(46, 204, 113);
@@ -662,35 +642,32 @@ function exportToPDF() {
         doc.setTextColor(230, 126, 34);
         doc.text(`Ball marks: ${badSpots.length}`, statsX, y);
         y += 10;
-        
-        // Right: Strike zone image
+
         const imgX = margin + statsW + 10;
         const imgW = pageWidth - imgX - margin;
         const imgH = (canvas.height / canvas.width) * imgW;
-        
+
         doc.setFontSize(12);
         doc.setTextColor(52, 152, 219);
         doc.text('Strike Zone', imgX, y);
         y += 4;
-        
+
         doc.setFontSize(8);
         doc.setTextColor(150, 150, 150);
         doc.text('Red box = Strike Zone | Blue = Ball Area', imgX, y);
         y += 2;
-        
+
         const canvasData = canvas.toDataURL('image/png');
         doc.addImage(canvasData, 'PNG', imgX, y, imgW, imgH);
         y += imgH + 5;
-        
-        // Footer
+
         doc.setFontSize(8);
         doc.setTextColor(150, 150, 150);
         doc.text('Generated by Pitcher Training Tracker', pageWidth / 2, 287, { align: 'center' });
-        
-        // Download
+
         const fileName = `Training_Report_${trainingName}_${trainingDate}.pdf`;
         doc.save(fileName);
-        
+
         closePreview();
     } catch (e) {
         console.error('PDF export error:', e);

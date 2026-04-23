@@ -11,6 +11,7 @@ let spots = [];
 let badSpots = [];
 let strikeZoneX, strikeZoneY, strikeZoneWidth, strikeZoneHeight;
 let largeZoneX, largeZoneY, largeZoneSize;
+let totalPitchesOffset = 0; // Manual offset for totalPitches
 
 // ===== Storage Key =====
 const STORAGE_KEY = 'pitcher_training_history';
@@ -189,24 +190,39 @@ canvas.addEventListener('click', (e) => {
 function setupEventListeners() {
     document.querySelectorAll('.btn-plus').forEach(btn => {
         btn.addEventListener('click', () => {
-            const target = document.getElementById(btn.dataset.target);
-            target.value = parseInt(target.value || 0) + 1;
-            updateStats();
+            const targetId = btn.dataset.target;
+            // Special handling for totalPitches: adjust offset instead of value
+            if (targetId === 'totalPitches') {
+                totalPitchesOffset++;
+                updateStats();
+            } else {
+                const target = document.getElementById(targetId);
+                target.value = parseInt(target.value || 0) + 1;
+                updateStats();
+            }
         });
     });
 
     document.querySelectorAll('.btn-minus').forEach(btn => {
         btn.addEventListener('click', () => {
-            const target = document.getElementById(btn.dataset.target);
-            target.value = Math.max(0, parseInt(target.value || 0) - 1);
-            updateStats();
+            const targetId = btn.dataset.target;
+            // Special handling for totalPitches: adjust offset
+            if (targetId === 'totalPitches') {
+                totalPitchesOffset = Math.max(-999, totalPitchesOffset - 1);
+                updateStats();
+            } else {
+                const target = document.getElementById(targetId);
+                target.value = Math.max(0, parseInt(target.value || 0) - 1);
+                updateStats();
+            }
         });
     });
 
-    ['goodBalls', 'badBalls', 'strikeouts', 'walks', 'hits', 'runs', 'totalPitches'].forEach(id => {
+    ['goodBalls', 'badBalls', 'strikeouts', 'walks', 'hits', 'runs'].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.addEventListener('input', updateStats);
     });
+    // totalPitches is computed, no input listener needed
 
     document.getElementById('clearSpots').addEventListener('click', () => {
         spots = [];
@@ -219,7 +235,7 @@ function setupEventListeners() {
         if (confirm('Reset all data?')) {
             document.getElementById('goodBalls').value = 0;
             document.getElementById('badBalls').value = 0;
-            document.getElementById('totalPitches').value = 0;
+            totalPitchesOffset = 0;
             document.getElementById('strikeouts').value = 0;
             document.getElementById('walks').value = 0;
             document.getElementById('hits').value = 0;
@@ -251,13 +267,24 @@ function setupEventListeners() {
 
     // Save training button
     document.getElementById('saveTraining').addEventListener('click', saveTraining);
+
+    // AI Analysis button
+    document.getElementById('aiAnalysis').addEventListener('click', runAIAnalysis);
+
+    // Close AI modal
+    document.getElementById('closeAiModal').addEventListener('click', closeAiModal);
+    document.getElementById('aiModal').addEventListener('click', (e) => {
+        if (e.target.id === 'aiModal') closeAiModal();
+    });
 }
 
 // ===== Update Stats =====
 function updateStats() {
     const goodBalls = parseInt(document.getElementById('goodBalls').value) || 0;
     const badBalls = parseInt(document.getElementById('badBalls').value) || 0;
-    const totalPitches = parseInt(document.getElementById('totalPitches').value) || 0;
+    // Total = auto sum of goodBalls + badBalls + manual offset
+    const autoTotal = goodBalls + badBalls;
+    const totalPitches = autoTotal + totalPitchesOffset;
     const strikeouts = parseInt(document.getElementById('strikeouts').value) || 0;
     const walks = parseInt(document.getElementById('walks').value) || 0;
     const hits = parseInt(document.getElementById('hits').value) || 0;
@@ -674,3 +701,480 @@ function exportToPDF() {
         alert('PDF export failed. Please try again.');
     }
 }
+
+// ===== AI Analysis =====
+function runAIAnalysis() {
+    const goodBalls = parseInt(document.getElementById('goodBalls').value) || 0;
+    const badBalls = parseInt(document.getElementById('badBalls').value) || 0;
+    const totalPitches = parseInt(document.getElementById('totalPitches').value) || 0;
+    const strikeouts = parseInt(document.getElementById('strikeouts').value) || 0;
+    const walks = parseInt(document.getElementById('walks').value) || 0;
+    const hits = parseInt(document.getElementById('hits').value) || 0;
+    const runs = parseInt(document.getElementById('runs').value) || 0;
+    const pitchType = document.getElementById('pitchType').value || 'N/A';
+    const pitcherName = document.getElementById('pitcherName').value || 'Unknown Pitcher';
+
+    if (totalPitches === 0 && spots.length === 0 && badSpots.length === 0) {
+        alert('No training data yet. Please record some pitches first.');
+        return;
+    }
+
+    // Analyze zone distribution (3x3 grid)
+    const zoneData = analyzeZoneDistribution(spots, badSpots);
+
+    // Generate AI report
+    const report = generateAIReport({
+        pitcherName,
+        pitchType,
+        goodBalls,
+        badBalls,
+        totalPitches,
+        strikeouts,
+        walks,
+        hits,
+        runs,
+        zoneData,
+        spots,
+        badSpots
+    });
+
+    // Display in modal
+    document.getElementById('aiModalContent').innerHTML = report;
+    document.getElementById('aiModal').classList.add('active');
+}
+
+function analyzeZoneDistribution(strikeSpots, ballSpots) {
+    // Define 3x3 zone boundaries
+    const zoneLabels = [
+        ['High-In', 'High-Mid', 'High-Out'],
+        ['Mid-In', 'Mid-Center', 'Mid-Out'],
+        ['Low-In', 'Low-Mid', 'Low-Out']
+    ];
+
+    // Initialize zone counts
+    const zones = {
+        strikes: [
+            [0, 0, 0],
+            [0, 0, 0],
+            [0, 0, 0]
+        ],
+        balls: [
+            [0, 0, 0],
+            [0, 0, 0],
+            [0, 0, 0]
+        ]
+    };
+
+    // Analyze strike spots
+    strikeSpots.forEach(spot => {
+        const zone = getZone(spot, 'strike');
+        if (zone) {
+            zones.strikes[zone.row][zone.col]++;
+        }
+    });
+
+    // Analyze ball spots
+    ballSpots.forEach(spot => {
+        const zone = getZone(spot, 'ball');
+        if (zone) {
+            zones.balls[zone.row][zone.col]++;
+        }
+    });
+
+    return zones;
+}
+
+function getZone(spot, type) {
+    // Normalize coordinates based on canvas size (450x580)
+    const canvasW = 450, canvasH = 580;
+    const largeZoneSize = Math.min(canvasW, canvasH) * 0.9;
+    const largeZoneX = (canvasW - largeZoneSize) / 2;
+    const largeZoneY = (canvasH - largeZoneSize) / 2;
+    const strikeZoneWidth = largeZoneSize * (2 / 3);
+    const strikeZoneHeight = largeZoneSize * (2 / 3);
+    const strikeZoneX = (canvasW - strikeZoneWidth) / 2;
+    const strikeZoneY = (canvasH - strikeZoneHeight) / 2;
+
+    const cellW = strikeZoneWidth / 3;
+    const cellH = strikeZoneHeight / 3;
+
+    // Calculate normalized position
+    const x = spot.x * (canvasW / (spot.x < 225 ? 450 : 450));
+    const y = spot.y * (canvasH / (spot.y < 290 ? 580 : 580));
+
+    // Determine row and col
+    let col, row;
+
+    if (type === 'strike') {
+        // Inside strike zone
+        if (x < strikeZoneX || x > strikeZoneX + strikeZoneWidth) return null;
+        if (y < strikeZoneY || y > strikeZoneY + strikeZoneHeight) return null;
+
+        col = Math.floor((x - strikeZoneX) / cellW);
+        row = Math.floor((y - strikeZoneY) / cellH);
+    } else {
+        // Outside strike zone (ball zone) - relative to large zone
+        if (x < largeZoneX || x > largeZoneX + largeZoneSize) return null;
+        if (y < largeZoneY || y > largeZoneY + largeZoneSize) return null;
+
+        col = Math.floor((x - largeZoneX) / (largeZoneSize / 3));
+        row = Math.floor((y - largeZoneY) / (largeZoneSize / 3));
+    }
+
+    // Clamp values
+    col = Math.max(0, Math.min(2, col));
+    row = Math.max(0, Math.min(2, row));
+
+    return { row, col };
+}
+
+function generateAIReport(data) {
+    const { pitcherName, pitchType, goodBalls, badBalls, totalPitches, strikeouts, walks, hits, runs, zoneData, spots, badSpots } = data;
+
+    // Calculate key metrics
+    const strikeRate = totalPitches > 0 ? ((goodBalls / totalPitches) * 100).toFixed(1) : 0;
+    const walkRate = totalPitches > 0 ? ((walks / totalPitches) * 100).toFixed(1) : 0;
+    const kRate = totalPitches > 0 ? ((strikeouts / totalPitches) * 100).toFixed(1) : 0;
+    const hitRate = totalPitches > 0 ? ((hits / totalPitches) * 100).toFixed(1) : 0;
+
+    // Analyze zone preferences
+    const zoneAnalysis = analyzeZonePreferences(zoneData, spots, badSpots);
+
+    // Generate insights
+    const insights = generateInsights({
+        strikeRate, walkRate, kRate, hitRate,
+        goodBalls, badBalls, strikeouts, walks, hits, runs,
+        zoneData, zoneAnalysis, pitchType
+    });
+
+    // Build zone heatmap HTML
+    const zoneHeatmap = buildZoneHeatmap(zoneData);
+
+    // Build report HTML
+    return `
+        <div style="font-family: Arial, sans-serif; color: #333; line-height: 1.6;">
+            <!-- Header -->
+            <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                <h3 style="margin: 0 0 5px 0;">${pitcherName}</h3>
+                <p style="margin: 0; opacity: 0.9;">Pitch Type: ${pitchType}</p>
+            </div>
+
+            <!-- Key Metrics -->
+            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;">
+                <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 24px; font-weight: bold; color: #27ae60;">${strikeRate}%</div>
+                    <div style="font-size: 12px; color: #666;">Strike Rate</div>
+                </div>
+                <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 24px; font-weight: bold; color: #e74c3c;">${kRate}%</div>
+                    <div style="font-size: 12px; color: #666;">K Rate</div>
+                </div>
+                <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 24px; font-weight: bold; color: #f39c12;">${walkRate}%</div>
+                    <div style="font-size: 12px; color: #666;">BB Rate</div>
+                </div>
+                <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; text-align: center;">
+                    <div style="font-size: 24px; font-weight: bold; color: #3498db;">${hitRate}%</div>
+                    <div style="font-size: 12px; color: #666;">Hit Rate</div>
+                </div>
+            </div>
+
+            <!-- Stats Summary -->
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                <h4 style="margin: 0 0 10px 0; color: #2c3e50;">📊 Training Summary</h4>
+                <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; font-size: 14px;">
+                    <div>Strikes: <strong>${goodBalls}</strong></div>
+                    <div>Balls: <strong>${badBalls}</strong></div>
+                    <div>Total: <strong>${totalPitches}</strong></div>
+                    <div>K: <strong>${strikeouts}</strong></div>
+                    <div>BB: <strong>${walks}</strong></div>
+                    <div>H: <strong>${hits}</strong></div>
+                </div>
+            </div>
+
+            <!-- Zone Heatmap -->
+            <div style="background: #f8f9fa; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                <h4 style="margin: 0 0 10px 0; color: #2c3e50;">🎯 Strike Zone Heatmap</h4>
+                <p style="font-size: 12px; color: #666; margin-bottom: 10px;">
+                    <span style="color: #27ae60;">■</span> Green = Strikes (S) | <span style="color: #e67e22;">■</span> Orange = Balls (B)
+                </p>
+                <div style="display: flex; gap: 20px; align-items: flex-start;">
+                    <div>
+                        <div style="font-size: 11px; color: #666; margin-bottom: 3px;">STRIKE ZONE</div>
+                        ${zoneHeatmap.strikeZone}
+                    </div>
+                    <div>
+                        <div style="font-size: 11px; color: #666; margin-bottom: 3px;">BALL ZONE</div>
+                        ${zoneHeatmap.ballZone}
+                    </div>
+                </div>
+            </div>
+
+            <!-- AI Insights -->
+            <div style="background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%); color: white; padding: 15px; border-radius: 10px; margin-bottom: 15px;">
+                <h4 style="margin: 0 0 10px 0;">💡 AI Coach Insights</h4>
+                ${insights.map(insight => `
+                    <div style="background: rgba(255,255,255,0.15); padding: 10px; border-radius: 8px; margin-bottom: 8px;">
+                        <strong>${insight.title}</strong>
+                        <p style="margin: 5px 0 0 0; opacity: 0.9;">${insight.text}</p>
+                    </div>
+                `).join('')}
+            </div>
+
+            <!-- Recommendations -->
+            <div style="background: #fff3cd; padding: 15px; border-radius: 10px; border-left: 4px solid #ffc107;">
+                <h4 style="margin: 0 0 10px 0; color: #856404;">🎯 Training Recommendations</h4>
+                <ul style="margin: 0; padding-left: 20px; color: #856404;">
+                    ${generateRecommendations(data).map(rec => `<li style="margin-bottom: 5px;">${rec}</li>`).join('')}
+                </ul>
+            </div>
+        </div>
+    `;
+}
+
+function analyzeZonePreferences(zoneData, strikeSpots, ballSpots) {
+    const preferences = {
+        favoriteZone: null,
+        weakZone: null,
+        highPitches: 0,
+        lowPitches: 0,
+        insidePitches: 0,
+        outsidePitches: 0,
+        strikeZoneControl: 0,
+        totalMarked: strikeSpots.length + ballSpots.length
+    };
+
+    // Calculate totals per area
+    let totalStrikes = 0, totalBalls = 0;
+    let highZone = 0, midZone = 0, lowZone = 0;
+    let insideZone = 0, outsideZone = 0;
+
+    for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+            totalStrikes += zoneData.strikes[r][c];
+            totalBalls += zoneData.balls[r][c];
+
+            // High/Mid/Low
+            if (r === 0) highZone += zoneData.strikes[r][c];
+            if (r === 1) midZone += zoneData.strikes[r][c];
+            if (r === 2) lowZone += zoneData.strikes[r][c];
+
+            // Inside/Outside (col 0 = inside, col 2 = outside)
+            if (c === 0) insideZone += zoneData.strikes[r][c];
+            if (c === 2) outsideZone += zoneData.strikes[r][c];
+        }
+    }
+
+    preferences.highPitches = highZone;
+    preferences.midPitches = midZone;
+    preferences.lowPitches = lowZone;
+    preferences.insidePitches = insideZone;
+    preferences.outsidePitches = outsideZone;
+    preferences.strikeZoneControl = totalStrikes;
+
+    return preferences;
+}
+
+function generateInsights(data) {
+    const insights = [];
+    const { strikeRate, walkRate, kRate, hitRate, goodBalls, badBalls, zoneData, zoneAnalysis, pitchType } = data;
+
+    // Strike Rate Analysis
+    if (parseFloat(strikeRate) >= 65) {
+        insights.push({
+            title: '✅ Excellent Command',
+            text: `Your strike rate of ${strikeRate}% is outstanding. You have exceptional pitch command and can work both sides of the plate effectively.`
+        });
+    } else if (parseFloat(strikeRate) >= 50) {
+        insights.push({
+            title: '⚠️ Average Command',
+            text: `Your strike rate of ${strikeRate}% is acceptable. Focus on throwing more strikes early in the count to improve this to 60%+.`
+        });
+    } else {
+        insights.push({
+            title: '🔴 Command Needs Work',
+            text: `A ${strikeRate}% strike rate is below average. Prioritize fastball command in future practices.`
+        });
+    }
+
+    // K/BB Ratio Analysis
+    const kbbRatio = parseFloat(walkRate) > 0 ? (parseFloat(kRate) / parseFloat(walkRate)).toFixed(2) : '∞';
+    if (kbbRatio >= 2) {
+        insights.push({
+            title: '✅ Great K/BB Ratio',
+            text: `Your K/BB ratio of ${kbbRatio} is excellent. You miss bats while limiting free passes effectively.`
+        });
+    } else if (kbbRatio >= 1) {
+        insights.push({
+            title: '⚠️ Average K/BB Ratio',
+            text: `Your K/BB ratio of ${kbbRatio} could be improved. Try to get ahead in the count more often.`
+        });
+    }
+
+    // Zone Distribution Analysis
+    const totalStrikes = zoneAnalysis.strikeZoneControl;
+    if (totalStrikes >= 15) {
+        // Find most and least used zones
+        let maxZone = { val: 0, row: 0, col: 0 };
+        let minZone = { val: Infinity, row: 0, col: 0 };
+
+        for (let r = 0; r < 3; r++) {
+            for (let c = 0; c < 3; c++) {
+                if (zoneData.strikes[r][c] > maxZone.val) {
+                    maxZone = { val: zoneData.strikes[r][c], row: r, col: c };
+                }
+                if (zoneData.strikes[r][c] < minZone.val && zoneData.strikes[r][c] > 0) {
+                    minZone = { val: zoneData.strikes[r][c], row: r, col: c };
+                }
+            }
+        }
+
+        const zoneNames = [
+            ['High-Inside', 'High-Middle', 'High-Outside'],
+            ['Mid-Inside', 'Heart', 'Mid-Outside'],
+            ['Low-Inside', 'Low-Middle', 'Low-Outside']
+        ];
+
+        if (maxZone.val > 0) {
+            insights.push({
+                title: '🎯 Favorite Zone',
+                text: `You favor the ${zoneNames[maxZone.row][maxZone.col]} zone (${maxZone.val} pitches). Hitters may start looking there.`
+            });
+        }
+    }
+
+    // Pitch Type Specific
+    if (pitchType === 'Four-seam Fastball' || pitchType === 'Fastball') {
+        insights.push({
+            title: '🏃 Fastball Focus',
+            text: 'For fastball pitchers: Work both sides of the plate and vary elevation. Stay aggressive after getting ahead 0-1 or 1-2.'
+        });
+    } else if (pitchType === 'Curveball') {
+        insights.push({
+            title: '🌀 Breaking Ball Focus',
+            text: 'Breaking balls work best when thrown for strikes early, then used as putaway pitches. Watch your command in the dirt.'
+        });
+    } else if (pitchType === 'Changeup') {
+        insights.push({
+            title: '🔄 Changeup Focus',
+            text: 'The changeup is most effective when it looks like a fastball out of your hand. Focus on similar arm action and release point.'
+        });
+    }
+
+    return insights;
+}
+
+function generateRecommendations(data) {
+    const recommendations = [];
+    const { strikeRate, walkRate, kRate, goodBalls, badBalls, totalPitches, zoneData, pitchType } = data;
+
+    // Strike rate recommendations
+    if (parseFloat(strikeRate) < 50) {
+        recommendations.push('Practice throwing strikes in bullpen sessions - aim for 70%+ strikes');
+        recommendations.push('Focus on a consistent release point to improve accuracy');
+    }
+
+    // Walk rate recommendations
+    if (parseFloat(walkRate) > 15) {
+        recommendations.push('Work on pitch efficiency - get ahead of hitters early in counts');
+        recommendations.push('Trust your stuff more - be aggressive with strikes when behind');
+    }
+
+    // Zone recommendations based on distribution
+    const totalStrikes = zoneData.strikes.flat().reduce((a, b) => a + b, 0);
+
+    if (totalStrikes > 0) {
+        // Check for low zone usage
+        const lowStrikes = zoneData.strikes[2].reduce((a, b) => a + b, 0);
+        if (lowStrikes < totalStrikes * 0.2) {
+            recommendations.push('Add more low pitches - hitters struggle with low strikes, especially in 2-strike counts');
+        }
+
+        // Check for high zone usage
+        const highStrikes = zoneData.strikes[0].reduce((a, b) => a + b, 0);
+        if (highStrikes > totalStrikes * 0.5) {
+            recommendations.push('Balance your elevation - mix in more low and middle pitches to keep hitters off balance');
+        }
+    }
+
+    // General recommendations
+    if (parseFloat(kRate) < 10) {
+        recommendations.push('Work on a putaway pitch - practice finishing hitters with your best secondary offering');
+        recommendations.push('Attack hitters aggressively in hitter\'s counts - don\'t give in to free bases');
+    }
+
+    // Pitch type specific
+    recommendations.push('Film your sessions to analyze mechanics and identify patterns');
+
+    // Always include one positive
+    if (parseFloat(strikeRate) >= 60) {
+        recommendations.push('Great command! Focus on pitch sequencing and locating on the edges of the zone');
+    }
+
+    return recommendations.slice(0, 5); // Limit to 5 recommendations
+}
+
+function buildZoneHeatmap(zoneData) {
+    const zoneLabels = [
+        ['High-In', 'High-Mid', 'High-Out'],
+        ['Mid-In', 'Mid-Center', 'Mid-Out'],
+        ['Low-In', 'Low-Mid', 'Low-Out']
+    ];
+
+    const getColor = (count, maxCount) => {
+        if (count === 0) return '#f0f0f0';
+        const intensity = Math.min(count / (maxCount || 5), 1);
+        return `rgba(46, 204, 113, ${0.2 + intensity * 0.8})`;
+    };
+
+    const getBallColor = (count, maxCount) => {
+        if (count === 0) return '#f0f0f0';
+        const intensity = Math.min(count / (maxCount || 5), 1);
+        return `rgba(230, 126, 34, ${0.2 + intensity * 0.8})`;
+    };
+
+    // Find max values
+    let maxStrike = 0, maxBall = 0;
+    for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+            maxStrike = Math.max(maxStrike, zoneData.strikes[r][c]);
+            maxBall = Math.max(maxBall, zoneData.balls[r][c]);
+        }
+    }
+
+    // Build strike zone grid
+    let strikeZoneHTML = '<div style="display: grid; grid-template-columns: repeat(3, 50px); grid-template-rows: repeat(3, 40px); gap: 2px;">';
+    for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+            const count = zoneData.strikes[r][c];
+            const label = zoneLabels[r][c];
+            const bgColor = getColor(count, maxStrike);
+            const textColor = count > 0 ? 'white' : '#999';
+            strikeZoneHTML += `<div style="background: ${bgColor}; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; color: ${textColor};">
+                <span style="font-weight: bold;">S:${count}</span>
+            </div>`;
+        }
+    }
+    strikeZoneHTML += '</div>';
+
+    // Build ball zone grid
+    let ballZoneHTML = '<div style="display: grid; grid-template-columns: repeat(3, 40px); grid-template-rows: repeat(3, 35px); gap: 2px;">';
+    for (let r = 0; r < 3; r++) {
+        for (let c = 0; c < 3; c++) {
+            const count = zoneData.balls[r][c];
+            const bgColor = getBallColor(count, maxBall);
+            const textColor = count > 0 ? 'white' : '#999';
+            ballZoneHTML += `<div style="background: ${bgColor}; border-radius: 4px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 10px; color: ${textColor};">
+                <span style="font-weight: bold;">B:${count}</span>
+            </div>`;
+        }
+    }
+    ballZoneHTML += '</div>';
+
+    return { strikeZone: strikeZoneHTML, ballZone: ballZoneHTML };
+}
+
+function closeAiModal() {
+    document.getElementById('aiModal').classList.remove('active');
+}
+

@@ -169,7 +169,13 @@
                 <button id="saveTraining" class="btn btn-primary" style="width: 100%;">
                     Save Training Record
                 </button>
+                <button id="aiAnalysis" class="btn btn-ai" style="width: 100%; margin-top: 10px;">
+                    🤖 AI Pitch Analysis
+                </button>
             </div>
+
+            <!-- AI Analysis Result -->
+            <div id="aiResult" class="ai-result" style="display: none; margin-top: 15px;"></div>
 
             <!-- History Section -->
             <div class="history-section">
@@ -197,6 +203,17 @@
         <div class="modal-buttons">
             <button id="cancelPreview" class="btn btn-secondary">Cancel</button>
             <button id="downloadPDF" class="btn btn-primary">Download PDF</button>
+        </div>
+    </div>
+</div>
+
+<!-- AI Result Modal -->
+<div id="aiModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+        <h2>🤖 AI Pitch Analysis Report</h2>
+        <div id="aiModalContent" style="max-height: 70vh; overflow-y: auto;"></div>
+        <div class="modal-buttons">
+            <button id="closeAiModal" class="btn btn-secondary">Close</button>
         </div>
     </div>
 </div>

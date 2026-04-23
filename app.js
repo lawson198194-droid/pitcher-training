@@ -174,9 +174,7 @@ canvas.addEventListener('click', (e) => {
 
     if (isInStrikeZone) {
         spots.push({ x, y });
-        // Auto increment goodBalls counter
-        const strikesInput = document.getElementById('goodBalls');
-        strikesInput.value = parseInt(strikesInput.value || 0) + 1;
+        // Strike zone: NO auto-increment, keep manual only
     } else {
         // Ball zone: NO auto-increment, keep manual only
         badSpots.push({ x, y });

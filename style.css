@@ -435,6 +435,43 @@ footer {
     margin-top: 15px;
 }
 
+/* Responsive stats grid for AI Report on mobile */
+.metrics-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+    margin-bottom: 20px;
+    min-width: 0;
+}
+
+.metric-card {
+    background: #f8f9fa;
+    padding: 12px;
+    border-radius: 8px;
+    text-align: center;
+    min-width: 0;
+}
+
+.metric-card .value {
+    font-size: 20px;
+    font-weight: bold;
+    word-break: break-all;
+}
+
+.metric-card .label {
+    font-size: 11px;
+    color: #666;
+}
+
+@media (max-width: 600px) {
+    #aiModalContent {
+        padding: 5px;
+    }
+    .metrics-grid {
+        grid-template-columns: repeat(2, 1fr) !important;
+    }
+}
+
 .modal-buttons {
     display: flex;
     justify-content: center;

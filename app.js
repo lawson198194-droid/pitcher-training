@@ -860,22 +860,22 @@ function generateAIReport(data) {
             </div>
 
             <!-- Key Metrics -->
-            <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 20px;">
-                <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; text-align: center;">
-                    <div style="font-size: 24px; font-weight: bold; color: #27ae60;">${strikeRate}%</div>
-                    <div style="font-size: 12px; color: #666;">Strike Rate</div>
+            <div class="metrics-grid">
+                <div class="metric-card">
+                    <div class="value" style="color: #27ae60;">${strikeRate}%</div>
+                    <div class="label">Strike Rate</div>
                 </div>
-                <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; text-align: center;">
-                    <div style="font-size: 24px; font-weight: bold; color: #e74c3c;">${kRate}%</div>
-                    <div style="font-size: 12px; color: #666;">K Rate</div>
+                <div class="metric-card">
+                    <div class="value" style="color: #e74c3c;">${kRate}%</div>
+                    <div class="label">K Rate</div>
                 </div>
-                <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; text-align: center;">
-                    <div style="font-size: 24px; font-weight: bold; color: #f39c12;">${walkRate}%</div>
-                    <div style="font-size: 12px; color: #666;">BB Rate</div>
+                <div class="metric-card">
+                    <div class="value" style="color: #f39c12;">${walkRate}%</div>
+                    <div class="label">BB Rate</div>
                 </div>
-                <div style="background: #f8f9fa; padding: 12px; border-radius: 8px; text-align: center;">
-                    <div style="font-size: 24px; font-weight: bold; color: #3498db;">${hitRate}%</div>
-                    <div style="font-size: 12px; color: #666;">Hit Rate</div>
+                <div class="metric-card">
+                    <div class="value" style="color: #3498db;">${hitRate}%</div>
+                    <div class="label">Hit Rate</div>
                 </div>
             </div>
 

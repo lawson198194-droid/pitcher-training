@@ -300,6 +300,9 @@ function showMultiGameStats() {
         return;
     }
     
+    // Reset selection on each open
+    selectedGameIds = [];
+    
     const container = document.getElementById('historyDetail');
     container.innerHTML = `
         <h3 style="color: #e74c3c; border-bottom: 2px solid #e74c3c; padding-bottom: 10px;">Select Games for Combined Stats</h3>
@@ -490,12 +493,15 @@ function loadHistoryList() {
 function toggleHistory() {
     const historyList = document.getElementById('historyList');
     const toggleBtn = document.getElementById('toggleHistory');
+    const multiBtn = document.getElementById('multiGameBtn');
     
     if (historyList.style.display === 'none') {
         historyList.style.display = 'block';
+        multiBtn.style.display = 'block';
         toggleBtn.innerHTML = 'Hide History (<span id="recordCount">' + (JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').length) + '</span>)';
     } else {
         historyList.style.display = 'none';
+        multiBtn.style.display = 'none';
         toggleBtn.innerHTML = 'Show History (<span id="recordCount">' + (JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]').length) + '</span>)';
     }
 }

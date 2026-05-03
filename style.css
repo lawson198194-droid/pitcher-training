@@ -256,23 +256,6 @@ section h2 {
     background: #c0392b;
 }
 
-.btn-ai {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: #fff;
-    border: none;
-    padding: 12px 20px;
-    border-radius: 8px;
-    font-size: 14px;
-    font-weight: 600;
-    cursor: pointer;
-    transition: all 0.3s ease;
-}
-
-.btn-ai:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-}
-
 /* ===== Stats Summary ===== */
 .stats-summary {
     margin-top: 20px;
@@ -401,75 +384,6 @@ footer {
     color: #e74c3c;
     margin-bottom: 20px;
     text-align: center;
-}
-
-/* AI Report Full-Screen Modal */
-#aiModal .modal-content {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    max-width: 100vw;
-    max-height: 100vh;
-    border-radius: 0;
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    box-sizing: border-box;
-}
-
-#aiModal .modal-content h2 {
-    flex-shrink: 0;
-    margin-bottom: 15px;
-}
-
-#aiModalContent {
-    flex: 1;
-    overflow-y: auto;
-    max-height: none !important;
-}
-
-#aiModal .modal-buttons {
-    flex-shrink: 0;
-    margin-top: 15px;
-}
-
-/* Responsive stats grid for AI Report on mobile */
-.metrics-grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
-    margin-bottom: 20px;
-    min-width: 0;
-}
-
-.metric-card {
-    background: #f8f9fa;
-    padding: 12px;
-    border-radius: 8px;
-    text-align: center;
-    min-width: 0;
-}
-
-.metric-card .value {
-    font-size: 20px;
-    font-weight: bold;
-    word-break: break-all;
-}
-
-.metric-card .label {
-    font-size: 11px;
-    color: #666;
-}
-
-@media (max-width: 600px) {
-    #aiModalContent {
-        padding: 5px;
-    }
-    .metrics-grid {
-        grid-template-columns: repeat(2, 1fr) !important;
-    }
 }
 
 .modal-buttons {

@@ -41,7 +41,6 @@
                     <option value="Curveball">Curveball</option>
                     <option value="Changeup">Changeup</option>
                     <option value="Cutter">Cutter</option>
-                    <option value="Softball">垒球 (Softball)</option>
                     <option value="Other">Other</option>
                 </select>
             </div>
@@ -57,49 +56,43 @@
         <!-- Left: Strike Zone Canvas -->
         <section class="strike-zone-section">
             <h2>Strike Zone Map</h2>
-            <p class="hint">Click to mark: Inside red border = Strike (auto+1) | Outside = Ball (manual)</p>
+            <p class="hint">Click to mark: Inside red border = Strike (green), Outside = Ball (orange)</p>
             <div class="strike-zone-container">
                 <canvas id="strikeZoneCanvas" width="450" height="580"></canvas>
             </div>
             <div class="zone-legend">
-                <span class="legend-item"><span class="dot green"></span> Strike (inside red border) → auto +1</span>
-                <span class="legend-item"><span class="dot orange"></span> Ball (outside area) → manual only</span>
+                <span class="legend-item"><span class="dot green"></span> Strike (inside red border)</span>
+                <span class="legend-item"><span class="dot orange"></span> Ball (outside area)</span>
             </div>
-            <button id="clearSpots" class="btn btn-secondary">Clear Marks</button>
+            <div style="display: flex; gap: 10px; margin-top: 10px;">
+                <button id="clearSpots" class="btn btn-secondary" style="flex: 1;">Clear Marks</button>
+                <button id="undoBtn" class="btn btn-secondary" style="flex: 1; display: none;">Undo Last</button>
+            </div>
         </section>
 
         <!-- Right: Data Entry & Stats -->
         <section class="data-section">
             <h2>Pitch Statistics</h2>
-
+            
             <div class="data-form">
                 <div class="input-group">
-                    <label for="goodBalls">Strikes (auto)</label>
+                    <label for="goodBalls">Strikes</label>
                     <div class="number-input">
                         <button class="btn-minus" data-target="goodBalls">−</button>
                         <input type="number" id="goodBalls" value="0" min="0">
                         <button class="btn-plus" data-target="goodBalls">+</button>
                     </div>
                 </div>
-
+                
                 <div class="input-group">
-                    <label for="badBalls">Balls (manual)</label>
+                    <label for="badBalls">Balls</label>
                     <div class="number-input">
                         <button class="btn-minus" data-target="badBalls">−</button>
                         <input type="number" id="badBalls" value="0" min="0">
                         <button class="btn-plus" data-target="badBalls">+</button>
                     </div>
                 </div>
-
-                <div class="input-group">
-                    <label for="totalPitches">Total Pitches (manual)</label>
-                    <div class="number-input">
-                        <button class="btn-minus" data-target="totalPitches">−</button>
-                        <input type="number" id="totalPitches" value="0" min="0">
-                        <button class="btn-plus" data-target="totalPitches">+</button>
-                    </div>
-                </div>
-
+                
                 <div class="input-group">
                     <label for="strikeouts">Strikeouts K</label>
                     <div class="number-input">
@@ -108,7 +101,7 @@
                         <button class="btn-plus" data-target="strikeouts">+</button>
                     </div>
                 </div>
-
+                
                 <div class="input-group">
                     <label for="walks">Walks BB</label>
                     <div class="number-input">
@@ -117,7 +110,7 @@
                         <button class="btn-plus" data-target="walks">+</button>
                     </div>
                 </div>
-
+                
                 <div class="input-group">
                     <label for="hits">Hits</label>
                     <div class="number-input">
@@ -126,7 +119,7 @@
                         <button class="btn-plus" data-target="hits">+</button>
                     </div>
                 </div>
-
+                
                 <div class="input-group">
                     <label for="runs">Runs Scored</label>
                     <div class="number-input">
@@ -139,6 +132,10 @@
 
             <div class="stats-summary">
                 <h3>Summary</h3>
+                <div class="stat-item">
+                    <span class="stat-label">Total Pitches:</span>
+                    <span class="stat-value" id="totalPitches">0</span>
+                </div>
                 <div class="stat-item">
                     <span class="stat-label">Strike Rate:</span>
                     <span class="stat-value" id="goodBallRate">0%</span>
@@ -170,19 +167,16 @@
                 <button id="saveTraining" class="btn btn-primary" style="width: 100%;">
                     Save Training Record
                 </button>
-                <button id="aiAnalysis" class="btn btn-ai" style="width: 100%; margin-top: 10px;">
-                    🤖 AI Pitch Analysis
-                </button>
             </div>
-
-            <!-- AI Analysis Result -->
-            <div id="aiResult" class="ai-result" style="display: none; margin-top: 15px;"></div>
 
             <!-- History Section -->
             <div class="history-section">
                 <h3 id="historyTitle">Training History <span id="historyCount"></span></h3>
                 <button id="toggleHistory" class="btn btn-secondary" style="width: 100%;">
                     Show History (<span id="recordCount">0</span>)
+                </button>
+                <button id="multiGameBtn" class="btn btn-primary" style="width: 100%; margin-top: 8px; display: none;">
+                    📊 Multi-Game Stats
                 </button>
                 <div id="historyList" class="history-list" style="display: none;"></div>
             </div>
@@ -204,17 +198,6 @@
         <div class="modal-buttons">
             <button id="cancelPreview" class="btn btn-secondary">Cancel</button>
             <button id="downloadPDF" class="btn btn-primary">Download PDF</button>
-        </div>
-    </div>
-</div>
-
-<!-- AI Result Modal -->
-<div id="aiModal" class="modal">
-    <div class="modal-content ai-fullscreen">
-        <h2>🤖 AI Pitch Analysis Report</h2>
-        <div id="aiModalContent"></div>
-        <div class="modal-buttons">
-            <button id="closeAiModal" class="btn btn-secondary">Close</button>
         </div>
     </div>
 </div>
@@ -260,7 +243,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
 // Auto-install button click - Show manual instructions
 document.getElementById('installBtn').addEventListener('click', () => {
     const isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent);
-
+    
     if (isIOS) {
         alert('iOS Safari 安装步骤:\n\n' +
               '1. 点底部 Safari 菜单栏的 分享按钮 (方形箭头↑)\n' +
